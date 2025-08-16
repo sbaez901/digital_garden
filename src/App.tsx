@@ -3,7 +3,7 @@ import React, { useState, useMemo, useEffect } from "react";
 interface Task {
   id: string;
   title: string;
-  status: "todo" | "in-progress" | "done";
+  status: "todo" | "done";
   subtasks: Task[];
   pomodoros?: number; // Track completed pomodoros for this task
 }
@@ -415,7 +415,7 @@ export default function DigitalGardenApp() {
               ...task,
               subtasks: task.subtasks.map(subtask =>
                 subtask.id === id
-                  ? { ...subtask, status: (subtask.status === 'todo' ? 'in-progress' : subtask.status === 'in-progress' ? 'done' : 'todo') as 'todo' | 'in-progress' | 'done' }
+                  ? { ...subtask, status: (subtask.status === 'done' ? 'todo' : 'done') as 'todo' | 'done' }
                   : subtask
               )
             };
@@ -423,7 +423,7 @@ export default function DigitalGardenApp() {
           return task;
         } else {
           if (task.id === id) {
-            return { ...task, status: (task.status === 'todo' ? 'in-progress' : task.status === 'in-progress' ? 'done' : 'todo') as 'todo' | 'in-progress' | 'done' };
+            return { ...task, status: (task.status === 'done' ? 'todo' : 'done') as 'todo' | 'done' };
           }
           return task;
         }
@@ -540,7 +540,7 @@ export default function DigitalGardenApp() {
                 onChange={(e) => setEditingTitle(e.target.value)}
                 onBlur={saveEdit}
                 onKeyPress={(e) => e.key === 'Enter' && saveEdit()}
-                className="flex-1 px-3 py-2 border border-emerald-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                className="flex-1 px-3 py-2 border border-emerald-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-400 mr-2"
                 autoFocus
               />
             ) : (
@@ -567,16 +567,21 @@ export default function DigitalGardenApp() {
           </div>
           
           <div className="flex items-center gap-2">
-            <span 
-              className={`px-3 py-1 rounded-full text-sm font-medium cursor-pointer transition-colors ${
-                task.status === 'done' ? 'bg-green-100 text-green-800 hover:bg-green-200' : 
-                task.status === 'in-progress' ? 'bg-blue-100 text-blue-800 hover:bg-blue-200' : 
-                'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
-              }`} 
+            <button
               onClick={() => toggleStatus(task.id, parentId)}
+              className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all duration-200 cursor-pointer ${
+                task.status === 'done'
+                  ? 'bg-green-500 border-green-500 text-white'
+                  : 'bg-white border-gray-300 hover:border-green-400'
+              }`}
+              title={task.status === 'done' ? 'Mark as incomplete' : 'Mark as complete'}
             >
-              {task.status}
-            </span>
+              {task.status === 'done' && (
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              )}
+            </button>
             
             {level === 0 && (
               <button
@@ -653,7 +658,7 @@ export default function DigitalGardenApp() {
     setTasks(prevTasks => {
       const updatedTasks = prevTasks.map(task => 
         task.id === id 
-          ? { ...task, status: (task.status === 'todo' ? 'in-progress' : task.status === 'in-progress' ? 'done' : 'todo') as 'todo' | 'in-progress' | 'done' }
+          ? { ...task, status: (task.status === 'done' ? 'todo' : 'done') as 'todo' | 'done' }
           : task
       );
       
@@ -1222,7 +1227,7 @@ export default function DigitalGardenApp() {
 
         
         <div className="mt-6 text-center text-sm text-gray-600">
-          <p>💡 <strong>Tips:</strong> Click on a task title to edit it, click the status to cycle through (todo → in-progress → done)</p>
+          <p>💡 <strong>Tips:</strong> Click on a task title to edit it, click the checkbox to mark as complete/incomplete</p>
           <p className="mt-1">🌿 <strong>Subtasks:</strong> Use the +⊂ button to add nested tasks, click ▼/▶ to expand/collapse</p>
                           <p className="mt-1">🧩 <strong>Puzzle:</strong> Complete tasks to reveal seasonal garden images - each completion reveals a new puzzle piece!</p>
         </div>

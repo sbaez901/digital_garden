@@ -12,7 +12,8 @@
   "dependencies": {
     "d3-force": "^3.0.0",
     "react": "^19.1.1",
-    "react-dom": "^19.1.1"
+    "react-dom": "^19.1.1",
+    "react-jigsaw-puzzle": "^1.0.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.33.0",
