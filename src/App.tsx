@@ -17,6 +17,7 @@ export default function DigitalGardenApp() {
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
+  const [editingParentId, setEditingParentId] = useState<string | null>(null);
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
   
   // Pomodoro Timer State
@@ -389,7 +390,7 @@ export default function DigitalGardenApp() {
   const addSubtask = (parentId: string) => {
     const newSubtask: Task = {
       id: Date.now().toString(),
-      title: "New Subtask",
+      title: "Click to edit subtask",
       status: "todo",
       subtasks: []
     };
@@ -401,6 +402,12 @@ export default function DigitalGardenApp() {
     ));
     
     setExpandedTasks(prev => new Set([...prev, parentId]));
+    
+    // Start editing the new subtask immediately
+    setTimeout(() => {
+      setEditingId(newSubtask.id);
+      setEditingTitle("Click to edit subtask");
+    }, 100);
   };
 
   const toggleStatus = (id: string, parentId?: string) => {
@@ -452,16 +459,41 @@ export default function DigitalGardenApp() {
     setEditingTitle(task.title);
   };
 
+  const startEditingSubtask = (subtask: Task, parentId: string) => {
+    setEditingId(subtask.id);
+    setEditingTitle(subtask.title);
+    // Store parent ID for subtask editing
+    setEditingParentId(parentId);
+  };
+
   const saveEdit = () => {
     if (editingId && editingTitle.trim()) {
-      setTasks(tasks.map(task => 
-        task.id === editingId 
-          ? { ...task, title: editingTitle.trim() }
-          : task
-      ));
+      if (editingParentId) {
+        // Editing a subtask
+        setTasks(tasks.map(task => 
+          task.id === editingParentId 
+            ? { 
+                ...task, 
+                subtasks: task.subtasks.map(subtask =>
+                  subtask.id === editingId 
+                    ? { ...subtask, title: editingTitle.trim() }
+                    : subtask
+                )
+              }
+            : task
+        ));
+      } else {
+        // Editing a main task
+        setTasks(tasks.map(task => 
+          task.id === editingId 
+            ? { ...task, title: editingTitle.trim() }
+            : task
+        ));
+      }
     }
     setEditingId(null);
     setEditingTitle("");
+    setEditingParentId(null);
   };
 
   const deleteTask = (id: string, parentId?: string) => {
@@ -518,7 +550,7 @@ export default function DigitalGardenApp() {
             ) : (
               <span 
                 className="text-gray-800 font-medium cursor-pointer hover:text-emerald-700"
-                onClick={() => startEditing(task)}
+                onClick={() => level === 0 ? startEditing(task) : startEditingSubtask(task, parentId!)}
               >
                 {task.title}
               </span>
@@ -1196,7 +1228,7 @@ export default function DigitalGardenApp() {
         <div className="mt-6 text-center text-sm text-gray-600">
           <p>💡 <strong>Tips:</strong> Click on a task title to edit it, click the status to cycle through (todo → in-progress → done)</p>
           <p className="mt-1">🌿 <strong>Subtasks:</strong> Use the +⊂ button to add nested tasks, click ▼/▶ to expand/collapse</p>
-          <p className="mt-1">🌸 <strong>Garden:</strong> Watch your garden grow as you complete tasks - each completion adds a new flower!</p>
+                          <p className="mt-1">🧩 <strong>Puzzle:</strong> Complete tasks to reveal seasonal garden images - each completion reveals a new puzzle piece!</p>
         </div>
       </div>
     </div>
