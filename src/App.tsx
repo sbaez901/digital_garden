@@ -28,136 +28,159 @@ export default function DigitalGardenApp() {
   const [completedSessions, setCompletedSessions] = useState(0);
   
   // Tab Interface State
-  const [activeTab, setActiveTab] = useState<'pomodoro' | 'tasks'>('pomodoro');
+  const [activeTab, setActiveTab] = useState<'pomodoro' | 'tasks'>('tasks');
 
-  // Calculate garden stats
-  const gardenStats = useMemo(() => {
-    const totalTasks = tasks.length + tasks.reduce((sum, task) => sum + task.subtasks.length, 0);
-    const completedTasks = tasks.filter(t => t.status === 'done').length + 
-                          tasks.reduce((sum, task) => sum + task.subtasks.filter(st => st.status === 'done').length, 0);
-    const inProgressTasks = tasks.filter(t => t.status === 'in-progress').length + 
-                           tasks.reduce((sum, task) => sum + task.subtasks.filter(st => st.status === 'in-progress').length, 0);
+  // Puzzle Garden System
+  const [currentSeason, setCurrentSeason] = useState<'spring' | 'summer' | 'autumn' | 'winter'>('spring');
+  const [revealedPieces, setRevealedPieces] = useState<number>(0);
+  const [puzzleVersion, setPuzzleVersion] = useState(0); // Force new random image selection
+  
+  // Seasonal garden configurations
+  const seasonalGardens = {
+    spring: {
+      name: 'Cherry Blossom Spring Garden',
+      pieces: 12,
+      colors: ['from-pink-100 to-rose-200', 'from-pink-200 to-rose-300'],
+      theme: '🌸 Spring Renewal'
+    },
+    summer: {
+      name: 'Lavender Summer Garden',
+      pieces: 10,
+      colors: ['from-purple-100 to-indigo-200', 'from-purple-200 to-indigo-300'],
+      theme: '🌿 Summer Abundance'
+    },
+    autumn: {
+      name: 'Maple Autumn Garden',
+      pieces: 8,
+      colors: ['from-orange-100 to-red-200', 'from-orange-200 to-red-300'],
+      theme: '🍂 Autumn Warmth'
+    },
+    winter: {
+      name: 'Snow Winter Garden',
+      pieces: 6,
+      colors: ['from-blue-100 to-slate-200', 'from-blue-200 to-slate-300'],
+      theme: '❄️ Winter Serenity'
+    }
+  };
+  
+  // Get current season based on date
+  useEffect(() => {
+    const month = new Date().getMonth();
+    if (month >= 2 && month <= 4) setCurrentSeason('spring');
+    else if (month >= 5 && month <= 7) setCurrentSeason('summer');
+    else if (month >= 8 && month <= 10) setCurrentSeason('autumn');
+    else setCurrentSeason('winter');
+  }, []);
+  
+  // Debug logging for overlay
+  useEffect(() => {
+    // Removed debug logging
+  }, [revealedPieces, currentSeason]);
+  
+  // Reveal puzzle piece when task is completed
+  const revealPuzzlePiece = () => {
+    const currentGarden = seasonalGardens[currentSeason];
+    if (revealedPieces < currentGarden.pieces) {
+      setRevealedPieces(prev => {
+        const newCount = prev + 1;
+        
+        // Check if puzzle is complete
+        if (newCount >= currentGarden.pieces) {
+          // Puzzle complete! Auto-reset after a short delay
+          setTimeout(() => {
+            setRevealedPieces(0); // Reset puzzle pieces
+            // Force a new random image by incrementing puzzle version
+            setPuzzleVersion(prev => prev + 1);
+          }, 2000); // 2 second delay to show completion message
+        }
+        
+        return newCount;
+      });
+    }
+  };
+  
+  // Override task completion to trigger puzzle piece reveal
+  const completeTaskFromPomodoro = (taskId: string) => {
+    setTasks(tasks.map(task => {
+      // Check if current task is a main task
+      if (task.id === taskId) {
+        playSound('task-complete');
+        revealPuzzlePiece(); // Reveal puzzle piece
+        return { ...task, status: 'done' };
+      }
+      // Check if current task is a subtask
+      if (task.subtasks.some(subtask => subtask.id === taskId)) {
+        playSound('task-complete');
+        revealPuzzlePiece(); // Reveal puzzle piece
+        return {
+          ...task,
+          subtasks: task.subtasks.map(subtask =>
+            subtask.id === taskId
+              ? { ...subtask, status: 'done' }
+              : subtask
+          )
+        };
+      }
+      return task;
+    }));
     
-    const completionRate = totalTasks > 0 ? completedTasks / totalTasks : 0;
-    const healthScore = totalTasks > 0 ? (completedTasks * 0.6 + inProgressTasks * 0.3) / totalTasks : 0;
-    
-    return { totalTasks, completedTasks, inProgressTasks, completionRate, healthScore };
-  }, [tasks]);
+    // If the completed task was the current timer task, clear it
+    if (currentTaskId === taskId) {
+      setCurrentTaskId(undefined);
+    }
+  };
 
-  // Generate garden elements based on progress
-  const gardenElements = useMemo(() => {
-    const elements = [];
-    const { completedTasks, inProgressTasks, totalTasks } = gardenStats;
+  
+
+  // Generate puzzle pieces for current garden
+  const puzzlePieces = useMemo(() => {
+    const currentGarden = seasonalGardens[currentSeason];
+    const pieces = [];
+    const cols = Math.ceil(Math.sqrt(currentGarden.pieces));
+    const rows = Math.ceil(currentGarden.pieces / cols);
     
-    // Add completed flowers (blooming) with more variety
-    for (let i = 0; i < completedTasks; i++) {
-      const flowerTypes = ['🌻', '🌹', '🌷', '🌸', '🌺', '🌼', '🌻', '🌹', '🌷', '🌸'];
-      const sizes = ['large', 'medium', 'large', 'medium', 'large'];
-      elements.push({
-        id: `flower-${i}`,
-        type: 'flower',
-        emoji: flowerTypes[i % flowerTypes.length],
-        x: 15 + (i % 6) * 55 + Math.random() * 20,
-        y: 15 + Math.floor(i / 6) * 65 + Math.random() * 15,
-        size: sizes[i % sizes.length],
-        status: 'blooming',
-        animation: i % 3 === 0 ? 'bounce' : i % 3 === 1 ? 'pulse' : 'none'
-      });
-    }
+    // Get the main image for current season
+    const getSeasonMainImage = (season: string) => {
+      switch (season) {
+        case 'spring':
+          return '/images/spring/Copilot_20250815_213440.png';
+        case 'autumn':
+          return '/images/autumn/cozy-autumn-scene-house-path-flowers.jpg';
+        case 'summer':
+          return null;
+        case 'winter':
+          return null;
+        default:
+          return null;
+      }
+    };
     
-    // Add in-progress buds (growing) with staggered positioning
-    for (let i = 0; i < inProgressTasks; i++) {
-      elements.push({
-        id: `bud-${i}`,
-        type: 'bud',
-        emoji: ['🌱', '🌿', '🌱', '🌿'][i % 4],
-        x: 45 + (i % 5) * 65 + Math.random() * 25,
-        y: 130 + Math.floor(i / 5) * 55 + Math.random() * 20,
-        size: 'medium',
-        status: 'growing',
-        animation: 'bounce'
-      });
-    }
+    const mainImage = getSeasonMainImage(currentSeason);
+    const hasImage = mainImage !== null;
     
-    // Add todo seeds (planted) with natural distribution
-    const todoCount = totalTasks - completedTasks - inProgressTasks;
-    for (let i = 0; i < Math.min(todoCount, 10); i++) {
-      elements.push({
-        id: `seed-${i}`,
-        type: 'seed',
-        emoji: ['🌱', '🌿', '🌱', '🌿', '🌱'][i % 5],
-        x: 70 + (i % 5) * 75 + Math.random() * 30,
-        y: 210 + Math.floor(i / 5) * 45 + Math.random() * 25,
-        size: 'small',
-        status: 'planted',
-        animation: 'none'
-      });
-    }
-    
-    // Add decorative elements with progressive unlocking
-    if (completedTasks > 0) {
-      elements.push({ 
-        id: 'butterfly', 
-        type: 'decoration', 
-        emoji: '🦋', 
-        x: 290 + Math.random() * 20, 
-        y: 45 + Math.random() * 20, 
-        size: 'medium', 
-        status: 'active',
-        animation: 'bounce'
-      });
-    }
-    if (completedTasks > 2) {
-      elements.push({ 
-        id: 'bee', 
-        type: 'decoration', 
-        emoji: '🐝', 
-        x: 330 + Math.random() * 15, 
-        y: 75 + Math.random() * 15, 
-        size: 'small', 
-        status: 'active',
-        animation: 'bounce'
-      });
-    }
-    if (completedTasks > 4) {
-      elements.push({ 
-        id: 'sun', 
-        type: 'decoration', 
-        emoji: '☀️', 
-        x: 360 + Math.random() * 10, 
-        y: 15 + Math.random() * 10, 
-        size: 'large', 
-        status: 'active',
-        animation: 'pulse'
-      });
-    }
-    if (completedTasks > 6) {
-      elements.push({ 
-        id: 'rainbow', 
-        type: 'decoration', 
-        emoji: '🌈', 
-        x: 50 + Math.random() * 20, 
-        y: 280 + Math.random() * 15, 
-        size: 'medium', 
-        status: 'active',
-        animation: 'pulse'
-      });
-    }
-    if (completedTasks > 8) {
-      elements.push({ 
-        id: 'star', 
-        type: 'decoration', 
-        emoji: '⭐', 
-        x: 320 + Math.random() * 15, 
-        y: 120 + Math.random() * 15, 
-        size: 'small', 
-        status: 'active',
-        animation: 'pulse'
+    for (let i = 0; i < currentGarden.pieces; i++) {
+      const row = Math.floor(i / cols);
+      const col = i % cols;
+      const isRevealed = i < revealedPieces;
+      
+      pieces.push({
+        id: `piece-${i}`,
+        row,
+        col,
+        isRevealed,
+        delay: i * 0.1,
+        imageSrc: mainImage,
+        hasImage,
+        // Calculate the background position for this piece
+        bgPosition: {
+          x: -(col * (100 / cols)),
+          y: -(row * (100 / rows))
+        }
       });
     }
     
-    return elements;
-  }, [gardenStats]);
+    return pieces;
+  }, [currentSeason, revealedPieces]);
 
   // Dynamic day/night cycle effect
   const timeOfDay = useMemo(() => {
@@ -238,35 +261,6 @@ export default function DigitalGardenApp() {
     // Only start running if it's a new session type or if timer was stopped
     if (isNewSessionType || !isRunning) {
       setIsRunning(true);
-    }
-  };
-
-  // Function to complete tasks from Pomodoro view
-  const completeTaskFromPomodoro = (taskId: string) => {
-    setTasks(tasks.map(task => {
-      // Check if current task is a main task
-      if (task.id === taskId) {
-        playSound('task-complete');
-        return { ...task, status: 'done' };
-      }
-      // Check if current task is a subtask
-      if (task.subtasks.some(subtask => subtask.id === taskId)) {
-        playSound('task-complete');
-        return {
-          ...task,
-          subtasks: task.subtasks.map(subtask =>
-            subtask.id === taskId
-              ? { ...subtask, status: 'done' }
-              : subtask
-          )
-        };
-      }
-      return task;
-    }));
-    
-    // If the completed task was the current timer task, clear it
-    if (currentTaskId === taskId) {
-      setCurrentTaskId(undefined);
     }
   };
 
@@ -410,26 +404,47 @@ export default function DigitalGardenApp() {
   };
 
   const toggleStatus = (id: string, parentId?: string) => {
-    setTasks(tasks.map(task => {
-      if (parentId) {
-        if (task.id === parentId) {
-          return {
-            ...task,
-            subtasks: task.subtasks.map(subtask =>
-              subtask.id === id
-                ? { ...subtask, status: subtask.status === 'todo' ? 'in-progress' : subtask.status === 'in-progress' ? 'done' : 'todo' }
-                : subtask
-            )
-          };
+    setTasks(prevTasks => {
+      const updatedTasks = prevTasks.map(task => {
+        if (parentId) {
+          if (task.id === parentId) {
+            return {
+              ...task,
+              subtasks: task.subtasks.map(subtask =>
+                subtask.id === id
+                  ? { ...subtask, status: (subtask.status === 'todo' ? 'in-progress' : subtask.status === 'in-progress' ? 'done' : 'todo') as 'todo' | 'in-progress' | 'done' }
+                  : subtask
+              )
+            };
+          }
+          return task;
+        } else {
+          if (task.id === id) {
+            return { ...task, status: (task.status === 'todo' ? 'in-progress' : task.status === 'in-progress' ? 'done' : 'todo') as 'todo' | 'in-progress' | 'done' };
+          }
+          return task;
         }
-        return task;
-      } else {
-        if (task.id === id) {
-          return { ...task, status: task.status === 'todo' ? 'in-progress' : task.status === 'in-progress' ? 'done' : 'todo' };
+      });
+      
+      // Check if this task/subtask was just completed
+      const task = updatedTasks.find(t => parentId ? t.id === parentId : t.id === id);
+      if (task) {
+        if (parentId) {
+          // Subtask completion
+          const subtask = task.subtasks.find(st => st.id === id);
+          if (subtask && subtask.status === 'done') {
+            setTimeout(() => revealPuzzlePiece(), 0);
+          }
+        } else {
+          // Main task completion
+          if (task.status === 'done') {
+            setTimeout(() => revealPuzzlePiece(), 0);
+          }
         }
-        return task;
       }
-    }));
+      
+      return updatedTasks;
+    });
   };
 
   const startEditing = (task: Task) => {
@@ -606,6 +621,25 @@ export default function DigitalGardenApp() {
     oscillator.stop(audioContext.currentTime + 0.5);
   };
 
+  const toggleTask = (id: string) => {
+    setTasks(prevTasks => {
+      const updatedTasks = prevTasks.map(task => 
+        task.id === id 
+          ? { ...task, status: (task.status === 'todo' ? 'in-progress' : task.status === 'in-progress' ? 'done' : 'todo') as 'todo' | 'in-progress' | 'done' }
+          : task
+      );
+      
+      // Check if this task was just completed (status changed to 'done')
+      const updatedTask = updatedTasks.find(t => t.id === id);
+      if (updatedTask && updatedTask.status === 'done') {
+        // Task was just completed, reveal puzzle piece
+        setTimeout(() => revealPuzzlePiece(), 0);
+      }
+      
+      return updatedTasks;
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-zinc-50 p-8">
       <div className="max-w-6xl mx-auto">
@@ -617,6 +651,33 @@ export default function DigitalGardenApp() {
         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
           <h2 className="text-2xl font-semibold text-gray-800 mb-4 text-center">🌿 Your Growing Garden</h2>
           
+          {/* Season Selector */}
+          <div className="flex justify-center mb-4">
+            <div className="flex space-x-2 bg-gray-100 rounded-lg p-1">
+              {(['spring', 'summer', 'autumn', 'winter'] as const).map((season) => (
+                <button
+                  key={season}
+                  onClick={() => {
+                    setCurrentSeason(season);
+                    setRevealedPieces(0); // Reset puzzle for new season
+                  }}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                    currentSeason === season
+                      ? 'bg-white text-gray-800 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-800'
+                  }`}
+                >
+                  <span className="mr-2">
+                    {season === 'spring' ? '🌸' : 
+                     season === 'summer' ? '🌿' : 
+                     season === 'autumn' ? '🍂' : '❄️'}
+                  </span>
+                  {season.charAt(0).toUpperCase() + season.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
+          
           {/* Time-based Welcome Message */}
           <div className="text-center mb-4">
             <p className={`text-sm ${timeTheme.textColor} font-medium`}>
@@ -624,161 +685,180 @@ export default function DigitalGardenApp() {
             </p>
           </div>
           
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Garden Canvas */}
-            <div className={`relative bg-gradient-to-b ${timeTheme.bgGradient} rounded-lg p-4 h-80 overflow-hidden transition-all duration-1000`}>
-              {/* Time Indicator */}
-              <div className="absolute top-4 left-4 bg-white/80 backdrop-blur-sm rounded-lg px-3 py-2 text-sm">
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">{timeTheme.icon}</span>
-                  <span className={`font-medium ${timeTheme.textColor}`}>{timeOfDay}</span>
-                </div>
+            <div className={`relative bg-gradient-to-b ${timeTheme.bgGradient} rounded-lg p-6 h-96 overflow-hidden transition-all duration-1000`}>
+
+              
+              {/* Sophisticated Background Pattern */}
+              <div className="absolute inset-0 opacity-20">
+                <div className="absolute inset-0" style={{
+                  backgroundImage: `radial-gradient(circle at 20% 80%, rgba(34, 197, 94, 0.1) 0%, transparent 50%),
+                                  radial-gradient(circle at 80% 20%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
+                                  radial-gradient(circle at 40% 40%, rgba(168, 85, 247, 0.05) 0%, transparent 50%)`
+                }}></div>
               </div>
               
-              {/* Enhanced Background with Waves */}
-              <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-30"></div>
-              
-              {/* Animated Waves at Bottom */}
-              <div className="absolute bottom-0 left-0 right-0 h-16 overflow-hidden">
-                <div className="wave-container">
-                  <div className="wave wave1"></div>
-                  <div className="wave wave2"></div>
-                  <div className="wave wave3"></div>
+              {/* Puzzle Garden Grid */}
+              <div className="absolute inset-0 flex items-center justify-center p-4">
+                <div className="relative" style={{
+                  width: '100%',
+                  height: '100%'
+                }}>
+                  {/* Simple fade-in reveal system */}
+                  {(() => {
+                    // Get all available images for the current season
+                    const getSeasonImages = (season: string) => {
+                      switch (season) {
+                        case 'spring': return [
+                          '/images/spring/2151979634.jpg',
+                          '/images/spring/Copilot_20250815_213440.png',
+                          '/images/spring/Aug 15, 2025, 09_28_19 PM.png',
+                          '/images/spring/Spring Garden Serenity.png'
+                        ];
+                        case 'summer': return [
+                          '/images/summer/12690066_5024465.jpg',
+                          '/images/summer/38892778_8684227.jpg',
+                          '/images/summer/14666573_5487691.jpg',
+                          '/images/summer/38680622_8658334.jpg',
+                          '/images/summer/2151464672.jpg',
+                          '/images/summer/40129509_8728381.jpg',
+                          '/images/summer/49664024_9210295.jpg'
+                        ];
+                        case 'autumn': return [
+                          '/images/autumn/20282241_6241477.jpg',
+                          '/images/autumn/20547571_6261886.jpg',
+                          '/images/autumn/20547574_6261887.jpg',
+                          '/images/autumn/9259712_4103455.jpg',
+                          '/images/autumn/16390915_5752424.jpg',
+                          '/images/autumn/16391197_5735750.jpg',
+                          '/images/autumn/cozy-autumn-scene-house-path-flowers.jpg',
+                          '/images/autumn/10100663.jpg'
+                        ];
+                        case 'winter': return [];
+                        default: return [];
+                      }
+                    };
+                    
+                    const seasonImages = getSeasonImages(currentSeason);
+                    let imageSrc = null;
+                    
+                    if (seasonImages.length > 0) {
+                      // Use a combination of season, current time, and puzzle version to get different images
+                      // This ensures variety while keeping the same image during a session
+                      const timeSeed = Math.floor(Date.now() / (1000 * 60 * 60 * 24)); // Changes daily
+                      const seasonSeed = currentSeason.charCodeAt(0) + currentSeason.charCodeAt(1);
+                      const combinedSeed = timeSeed + seasonSeed + puzzleVersion;
+                      const imageIndex = combinedSeed % seasonImages.length;
+                      imageSrc = seasonImages[imageIndex];
+                      
+                      // Debug logging to verify randomization
+                      console.log(`🎲 Season: ${currentSeason}, Time Seed: ${timeSeed}, Season Seed: ${seasonSeed}, Puzzle Version: ${puzzleVersion}, Combined: ${combinedSeed}, Image Index: ${imageIndex}, Selected: ${imageSrc.split('/').pop()}`);
+                    }
+                    
+                    if (!imageSrc) {
+                      return (
+                        <div 
+                          className="w-full h-full rounded-lg"
+                          style={{
+                            background: `linear-gradient(135deg, ${seasonalGardens[currentSeason].colors[0]}, ${seasonalGardens[currentSeason].colors[1]})`
+                          }}
+                        />
+                      );
+                    }
+                    
+                    // Calculate opacity based on revealed pieces
+                    const totalPieces = seasonalGardens[currentSeason].pieces;
+                    const opacity = revealedPieces / totalPieces; // 0 to 1
+                    
+                    return (
+                      <div className="w-full h-full relative">
+                        {/* Background image with fade-in effect */}
+                        <img 
+                          src={imageSrc} 
+                          alt="Seasonal Garden"
+                          className="w-full h-full object-cover rounded-lg transition-opacity duration-1000"
+                          style={{
+                            opacity: opacity
+                          }}
+                        />
+                        
+                        {/* Colored overlay that fades out as image appears */}
+                        <div 
+                          className="absolute inset-0 transition-opacity duration-1000 rounded-lg"
+                          style={{
+                            background: `linear-gradient(135deg, ${seasonalGardens[currentSeason].colors[0]}, ${seasonalGardens[currentSeason].colors[1]})`,
+                            opacity: 1 - opacity, // Inverse of image opacity
+                            zIndex: 10
+                          }}
+                        />
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
-              
-              {/* Floating Particles */}
-              <div className="particles-container">
-                {Array.from({ length: 15 }).map((_, i) => (
-                  <div
-                    key={`particle-${i}`}
-                    className="particle"
-                    style={{
-                      '--delay': `${i * 0.5}s`,
-                      '--duration': `${3 + i * 0.2}s`,
-                      '--x': `${20 + (i * 25) % 300}px`,
-                      '--y': `${50 + (i * 30) % 200}px`
-                    } as React.CSSProperties}
-                  ></div>
-                ))}
-              </div>
-              
-              {/* Garden Elements with Enhanced Effects */}
-              {gardenElements.map((element) => (
-                <div
-                  key={element.id}
-                  className={`absolute transition-all duration-1000 ease-out ${
-                    element.size === 'large' ? 'text-4xl' : 
-                    element.size === 'medium' ? 'text-3xl' : 'text-2xl'
-                  } ${
-                    element.animation === 'bounce' ? 'animate-bounce' : 
-                    element.animation === 'pulse' ? 'animate-pulse' : ''
-                  }`}
-                  style={{
-                    left: `${element.x}px`,
-                    top: `${element.y}px`,
-                    transform: `scale(${element.status === 'blooming' ? 1.1 : 1})`,
-                    filter: element.status === 'blooming' ? 'drop-shadow(0 0 10px rgba(34, 197, 94, 0.6))' : 'none'
-                  }}
-                >
-                  {element.emoji}
-                  
-                  {/* Rainbow Trail for Butterflies and Bees */}
-                  {element.type === 'decoration' && (
-                    <div className="rainbow-trail"></div>
-                  )}
-                  
-                  {/* Glow Effect for Blooming Flowers */}
-                  {element.status === 'blooming' && (
-                    <div className="flower-glow"></div>
-                  )}
-                </div>
-              ))}
-              
-              {/* Floating Leaves */}
-              <div className="floating-leaves">
-                {Array.from({ length: 8 }).map((_, i) => (
-                  <div
-                    key={`leaf-${i}`}
-                    className="floating-leaf"
-                    style={{
-                      '--delay': `${i * 0.8}s`,
-                      '--duration': `${4 + i * 0.5}s`,
-                      '--x': `${30 + (i * 40) % 280}px`,
-                      '--y': `${60 + (i * 25) % 180}px`
-                    } as React.CSSProperties}
-                  >
-                    🍃
-                  </div>
-                ))}
-              </div>
-              
-              {/* Achievement Sparks */}
-              {gardenStats.completionRate > 0.5 && (
-                <div className="achievement-sparks">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <div
-                      key={`spark-${i}`}
-                      className="achievement-spark"
-                      style={{
-                        '--delay': `${i * 0.3}s`,
-                        '--x': `${150 + Math.cos(i * 1.2) * 100}px`,
-                        '--y': `${100 + Math.sin(i * 1.2) * 80}px`
-                      } as React.CSSProperties}
-                    >
-                      ✨
-                    </div>
-                  ))}
-                </div>
-              )}
               
               {/* Garden Stats Overlay */}
-              <div className="absolute bottom-4 right-4 bg-white/80 backdrop-blur-sm rounded-lg p-3 text-sm">
+              <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg p-4 text-sm shadow-sm">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-emerald-600">{Math.round(gardenStats.completionRate * 100)}%</div>
-                  <div className="text-gray-600">Complete</div>
+                  <div className="text-2xl font-bold text-emerald-600">{revealedPieces}/{seasonalGardens[currentSeason].pieces}</div>
+                  <div className="text-gray-600 font-medium">Puzzle Pieces</div>
+                  {revealedPieces === seasonalGardens[currentSeason].pieces && (
+                    <div className="mt-2 text-xs bg-emerald-100 text-emerald-800 px-2 py-1 rounded-full">
+                      🎉 Puzzle Complete! 🚀 New puzzle loading...
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
             
-            {/* Garden Stats */}
-            <div className="space-y-4">
+            {/* Puzzle Progress Stats */}
+            <div className="space-y-6">
               <div className="grid grid-cols-3 gap-4">
-                <div className="bg-green-100 rounded-lg p-4 text-center transform hover:scale-105 transition-transform duration-200">
-                  <div className="text-2xl font-bold text-green-600">{gardenStats.completedTasks}</div>
-                  <div className="text-sm text-green-700">Blooming Flowers</div>
+                <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-xl p-5 text-center transform hover:scale-105 transition-all duration-300 shadow-sm border border-emerald-100/50">
+                  <div className="text-3xl font-bold text-emerald-700 mb-1">{revealedPieces}</div>
+                  <div className="text-sm text-emerald-600 font-medium">Puzzle Pieces</div>
                 </div>
-                <div className="bg-blue-100 rounded-lg p-4 text-center transform hover:scale-105 transition-transform duration-200">
-                  <div className="text-2xl font-bold text-blue-600">{gardenStats.inProgressTasks}</div>
-                  <div className="text-sm text-blue-700">Growing Buds</div>
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-5 text-center transform hover:scale-105 transition-all duration-300 shadow-sm border border-blue-100/50">
+                  <div className="text-3xl font-bold text-blue-700 mb-1">{seasonalGardens[currentSeason].pieces}</div>
+                  <div className="text-sm text-blue-600 font-medium">Total Pieces</div>
                 </div>
-                <div className="bg-yellow-100 rounded-lg p-4 text-center transform hover:scale-105 transition-transform duration-200">
-                  <div className="text-2xl font-bold text-yellow-600">{gardenStats.totalTasks}</div>
-                  <div className="text-sm text-yellow-700">Total Plants</div>
+                <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-5 text-center transform hover:scale-105 transition-all duration-300 shadow-sm border border-amber-100/50">
+                  <div className="text-3xl font-bold text-amber-700 mb-1">{Math.round((revealedPieces / seasonalGardens[currentSeason].pieces) * 100)}%</div>
+                  <div className="text-sm text-amber-600 font-medium">Complete</div>
                 </div>
               </div>
               
-              <div className="bg-emerald-50 rounded-lg p-4">
-                <h3 className="font-semibold text-emerald-800 mb-2">🌱 Garden Health</h3>
-                <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+              <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-xl p-5 border border-emerald-100/50">
+                <h3 className="font-semibold text-emerald-800 mb-3 flex items-center gap-2">
+                  <span className="text-lg">🧩</span>
+                  Puzzle Progress
+                </h3>
+                <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden mb-3">
                   <div 
                     className="bg-gradient-to-r from-emerald-400 to-green-500 h-3 rounded-full transition-all duration-1000 relative"
-                    style={{ width: `${Math.round(gardenStats.healthScore * 100)}%` }}
+                    style={{ width: `${(revealedPieces / seasonalGardens[currentSeason].pieces) * 100}%` }}
                   >
-                    {/* Shimmer Effect on Health Bar */}
-                    <div className="shimmer-effect"></div>
+                    {/* Subtle Shimmer Effect */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse"></div>
                   </div>
                 </div>
-                <div className="text-sm text-emerald-700 mt-2">
-                  {gardenStats.healthScore > 0.8 ? '🌺 Garden is thriving!' :
-                   gardenStats.healthScore > 0.5 ? '🌿 Garden is growing well!' :
-                   gardenStats.healthScore > 0.2 ? '🌱 Garden needs attention' :
-                   '🌱 Time to plant some seeds!'}
+                <div className="text-sm text-emerald-700 font-medium">
+                  {revealedPieces === seasonalGardens[currentSeason].pieces ? '🎉 Puzzle Complete! 🚀 New puzzle loading...' :
+                   revealedPieces > seasonalGardens[currentSeason].pieces * 0.7 ? '🌺 Almost there!' :
+                   revealedPieces > seasonalGardens[currentSeason].pieces * 0.4 ? '🌿 Great progress!' :
+                   revealedPieces > 0 ? '🌱 Keep going!' :
+                   '🌱 Start completing tasks to reveal the puzzle!'}
                 </div>
               </div>
               
-              <div className="text-sm text-gray-600">
-                <p>💡 <strong>Tip:</strong> Complete tasks to see your garden bloom! Each completed task becomes a beautiful flower.</p>
+              <div className="bg-gradient-to-br from-slate-50 to-gray-50 rounded-xl p-4 border border-slate-100/50">
+                <div className="flex items-start gap-3">
+                  <span className="text-lg text-amber-500">💡</span>
+                  <div className="text-sm text-gray-700">
+                    <span className="font-semibold">Tip:</span> Complete tasks to reveal puzzle pieces! Each completed task reveals part of your seasonal garden image.
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -788,25 +868,26 @@ export default function DigitalGardenApp() {
         <div className="bg-white rounded-lg shadow-lg p-2 mb-6">
           <div className="flex space-x-1">
             <button
-              onClick={() => setActiveTab('pomodoro')}
-              className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all duration-200 ${
-                activeTab === 'pomodoro'
-                  ? 'bg-emerald-500 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              🍅 Pomodoro Timer
-            </button>
-            <button
               onClick={() => setActiveTab('tasks')}
               className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all duration-200 ${
                 activeTab === 'tasks'
-                  ? 'bg-emerald-500 text-white shadow-md'
+                  ? 'bg-emerald-600 text-white shadow-md'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
               📝 Task Management
             </button>
+            <button
+              onClick={() => setActiveTab('pomodoro')}
+              className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all duration-200 ${
+                activeTab === 'pomodoro'
+                  ? 'bg-emerald-600 text-white shadow-md'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              🍅 Pomodoro Timer
+            </button>
+
           </div>
         </div>
         
@@ -819,7 +900,7 @@ export default function DigitalGardenApp() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Timer Display */}
                 <div className="text-center">
-                  <div className={`inline-flex items-center justify-center w-32 h-32 rounded-full bg-gradient-to-br ${timerState === 'work' ? 'from-emerald-400 to-emerald-500' : timerState === 'shortBreak' ? 'from-green-400 to-green-500' : timerState === 'longBreak' ? 'from-blue-400 to-blue-500' : 'from-gray-400 to-gray-500'} text-white mb-4 transition-all duration-500 shadow-lg`}>
+                  <div className={`inline-flex items-center justify-center w-32 h-32 rounded-full bg-gradient-to-br ${timerState === 'work' ? 'from-emerald-500 to-emerald-600' : timerState === 'shortBreak' ? 'from-blue-400 to-blue-500' : timerState === 'longBreak' ? 'from-blue-500 to-blue-600' : 'from-gray-400 to-gray-500'} text-white mb-4 transition-all duration-500 shadow-lg`}>
                     <div className="text-center">
                       <div className="text-4xl font-bold">{formatTime(timeLeft)}</div>
                       <div className="text-sm opacity-90">{timerTheme.label}</div>
@@ -840,7 +921,7 @@ export default function DigitalGardenApp() {
                     {!isRunning ? (
                       <button
                         onClick={() => startTimer('work', currentTaskId)}
-                        className="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
                       >
                         {timerState === 'idle' ? 'Start Work' : 'Resume'}
                       </button>
@@ -865,7 +946,7 @@ export default function DigitalGardenApp() {
                   <div className="flex justify-center gap-2">
                     <button
                       onClick={() => startTimer('shortBreak')}
-                      className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm transition-colors"
+                      className="bg-blue-400 hover:bg-blue-500 text-white px-3 py-1 rounded text-sm transition-colors"
                     >
                       Short Break
                     </button>
@@ -893,7 +974,7 @@ export default function DigitalGardenApp() {
                             return (
                               <div className="flex items-center justify-between">
                                 <span className="text-gray-700">📋 {mainTask.title}</span>
-                                <span className="text-sm text-emerald-600">
+                                <span className="text-sm text-emerald-700">
                                   {mainTask.pomodoros || 0} 🍅
                                 </span>
                               </div>
@@ -909,7 +990,7 @@ export default function DigitalGardenApp() {
                                   <div className="text-xs text-gray-500">{task.title}</div>
                                   <div className="flex items-center justify-between">
                                     <span className="text-gray-700">└ {subtask.title}</span>
-                                    <span className="text-sm text-emerald-600">
+                                    <span className="text-sm text-emerald-700">
                                       {subtask.pomodoros || 0} 🍅
                                     </span>
                                   </div>
@@ -949,7 +1030,7 @@ export default function DigitalGardenApp() {
                             >
                               <div className="flex items-center justify-between">
                                 <span className="truncate">📋 {task.title}</span>
-                                <span className="text-emerald-600 text-xs">
+                                <span className="text-emerald-700 text-xs">
                                   {task.pomodoros || 0} 🍅
                                 </span>
                               </div>
@@ -976,7 +1057,7 @@ export default function DigitalGardenApp() {
                               >
                                 <div className="flex items-center justify-between">
                                   <span className="truncate">└ {subtask.title}</span>
-                                  <span className="text-emerald-600 text-xs">
+                                  <span className="text-emerald-700 text-xs">
                                     {subtask.pomodoros || 0} 🍅
                                   </span>
                                 </div>
@@ -1001,8 +1082,8 @@ export default function DigitalGardenApp() {
                   {/* Timer Statistics */}
                   <div className="grid grid-cols-2 gap-4">
                     <div className="bg-emerald-100 rounded-lg p-3 text-center">
-                      <div className="text-2xl font-bold text-emerald-600">{completedPomodoros}</div>
-                      <div className="text-sm text-emerald-700">Pomodoros</div>
+                      <div className="text-2xl font-bold text-emerald-700">{completedPomodoros}</div>
+                      <div className="text-sm text-emerald-800">Pomodoros</div>
                     </div>
                     <div className="bg-blue-100 rounded-lg p-3 text-center">
                       <div className="text-2xl font-bold text-blue-600">{completedSessions}</div>
@@ -1019,7 +1100,7 @@ export default function DigitalGardenApp() {
                           window.location.reload();
                         }
                       }}
-                      className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm transition-colors"
+                      className="bg-rose-400 hover:bg-rose-500 text-white px-4 py-2 rounded-lg text-sm transition-colors"
                       title="Clear all data and start fresh"
                     >
                       🗑️ Clear All Data
@@ -1070,12 +1151,30 @@ export default function DigitalGardenApp() {
             <div className="bg-white rounded-lg shadow-lg p-6">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-semibold text-gray-800">Your Tasks</h2>
-                <button
-                  onClick={addTask}
-                  className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-                >
-                  + Add Task
-                </button>
+                <div className="flex gap-3">
+                  <button
+                    onClick={addTask}
+                    className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                  >
+                    + Add Task
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (window.confirm('Are you sure you want to clear all data? This will remove all tasks and reset puzzle progress. This action cannot be undone.')) {
+                        setTasks([]);
+                        setRevealedPieces(0);
+                        setCurrentTaskId(undefined);
+                        setEditingId(null);
+                        setEditingTitle("");
+                        setExpandedTasks(new Set());
+                      }
+                    }}
+                    className="bg-rose-400 hover:bg-rose-500 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                    title="Clear all tasks and reset puzzle progress"
+                  >
+                    🗑️ Clear All Data
+                  </button>
+                </div>
               </div>
               
               <div className="space-y-3">
@@ -1090,6 +1189,9 @@ export default function DigitalGardenApp() {
             </div>
           </>
         )}
+        
+
+
         
         <div className="mt-6 text-center text-sm text-gray-600">
           <p>💡 <strong>Tips:</strong> Click on a task title to edit it, click the status to cycle through (todo → in-progress → done)</p>
