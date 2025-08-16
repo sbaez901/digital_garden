@@ -9,11 +9,7 @@ interface Task {
 }
 
 export default function DigitalGardenApp() {
-  const [tasks, setTasks] = useState<Task[]>([
-    { id: "1", title: "Design database schema", status: "todo", subtasks: [] },
-    { id: "2", title: "Implement API endpoints", status: "todo", subtasks: [] },
-    { id: "3", title: "Create frontend components", status: "todo", subtasks: [] },
-  ]);
+  const [tasks, setTasks] = useState<Task[]>([]);
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
