@@ -922,38 +922,38 @@ export default function DigitalGardenApp() {
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-zinc-50 dark:from-gray-900 dark:to-gray-800 p-4 transition-colors duration-300 relative overflow-hidden">
-      {/* Subtle Floating Particles */}
-      <div className="absolute inset-0 pointer-events-none">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-zinc-50 dark:from-gray-900 dark:to-gray-800 p-2 sm:p-4 transition-colors duration-300 relative overflow-hidden">
+      {/* Subtle Floating Particles - Hidden on mobile for performance */}
+      <div className="absolute inset-0 pointer-events-none hidden sm:block">
         <div className="absolute top-16 left-16 w-1 h-1 bg-emerald-300/20 dark:bg-emerald-400/15 rounded-full animate-pulse"></div>
         <div className="absolute top-32 right-24 w-0.5 h-0.5 bg-green-300/25 dark:bg-green-400/20 rounded-full animate-pulse" style={{animationDelay: '1s'}}></div>
         <div className="absolute bottom-32 left-24 w-1 h-1 bg-teal-300/20 dark:bg-teal-400/15 rounded-full animate-pulse" style={{animationDelay: '2s'}}></div>
       </div>
       
-      <div className="max-w-5xl mx-auto relative z-10">
-        {/* Ultra-Modern Compact Header */}
-        <div className="flex items-center justify-between mb-6">
+      <div className="max-w-5xl mx-auto relative z-10 px-2 sm:px-4">
+        {/* Ultra-Modern Compact Header - Mobile Optimized */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0 mb-4 sm:mb-6">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg">
-              <span className="text-white text-lg">🌱</span>
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg">
+              <span className="text-white text-base sm:text-lg">🌱</span>
             </div>
             <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400 bg-clip-text text-transparent">
+              <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400 bg-clip-text text-transparent">
                 Task Garden
               </h1>
-              <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+              <p className="text-xs text-gray-500 dark:text-gray-400 font-medium hidden sm:block">
                 Cultivate productivity, watch achievements bloom
               </p>
             </div>
           </div>
           
-          {/* Modern Action Buttons */}
-          <div className="flex items-center gap-3">
-            {/* User Status Indicator */}
+          {/* Modern Action Buttons - Mobile Stacked */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
+            {/* User Status Indicator - Mobile Optimized */}
             {currentUser && (
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-900/30 rounded-lg border border-emerald-200/50 dark:border-emerald-700/50">
+              <div className="flex items-center justify-center gap-2 px-3 py-2 bg-emerald-50 dark:bg-emerald-900/30 rounded-lg border border-emerald-200/50 dark:border-emerald-700/50">
                 <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
-                <span className="text-xs text-emerald-700 dark:text-emerald-300 font-medium">
+                <span className="text-xs text-emerald-700 dark:text-emerald-300 font-medium truncate max-w-[120px] sm:max-w-none">
                   {currentUser.email}
                 </span>
                 {isLoadingTasks && (
@@ -968,36 +968,38 @@ export default function DigitalGardenApp() {
               </div>
             )}
             
+            {/* Dark Mode Toggle - Mobile Optimized */}
             <button
               onClick={() => {
                 console.log('🔄 Toggle clicked! Current dark mode:', isDarkMode);
                 setIsDarkMode(!isDarkMode);
               }}
-              className="p-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 rounded-lg transition-all duration-200 hover:scale-105"
+              className="p-3 sm:p-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 rounded-lg transition-all duration-200 hover:scale-105 active:scale-95 touch-manipulation"
               title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
             >
               {isDarkMode ? (
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-5 h-5 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" />
                 </svg>
               ) : (
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-5 h-5 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
                 </svg>
               )}
             </button>
             
+            {/* Auth Buttons - Mobile Optimized */}
             {!currentUser ? (
               <button
                 onClick={() => setShowAuth(true)}
-                className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-sm font-medium rounded-lg hover:from-emerald-600 hover:to-teal-700 transition-all duration-200 hover:scale-105 shadow-md"
+                className="px-4 py-3 sm:py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-sm font-medium rounded-lg hover:from-emerald-600 hover:to-teal-700 transition-all duration-200 hover:scale-105 active:scale-95 shadow-md touch-manipulation"
               >
                 Sign In
               </button>
             ) : (
               <button
                 onClick={handleLogout}
-                className="px-4 py-2 bg-gradient-to-r from-gray-500 to-gray-600 text-white text-sm font-medium rounded-lg hover:from-gray-600 hover:to-gray-700 transition-all duration-200 hover:scale-105 shadow-md"
+                className="px-4 py-3 sm:py-2 bg-gradient-to-r from-gray-500 to-gray-600 text-white text-sm font-medium rounded-lg hover:from-gray-600 hover:to-gray-700 transition-all duration-200 hover:scale-105 active:scale-95 shadow-md touch-manipulation"
               >
                 Sign Out
               </button>
@@ -1007,9 +1009,9 @@ export default function DigitalGardenApp() {
         
 
         
-        {/* Ultra-Compact Garden Section */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md dark:shadow-gray-900/50 p-3 mb-4 transition-all duration-300 border border-gray-100/50 dark:border-gray-700/50">
-          <div className="flex items-center justify-between mb-2">
+        {/* Ultra-Compact Garden Section - Mobile Optimized */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md dark:shadow-gray-900/50 p-3 sm:p-4 mb-4 transition-all duration-300 border border-gray-100/50 dark:border-gray-700/50">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 mb-3 sm:mb-2">
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 bg-gradient-to-br from-green-400 to-emerald-500 rounded flex items-center justify-center shadow-sm">
                 <span className="text-white text-xs">🌿</span>
@@ -1018,15 +1020,15 @@ export default function DigitalGardenApp() {
                 Your Growing Garden
               </h2>
             </div>
-            <p className="text-gray-500 dark:text-gray-400 text-xs">
+            <p className="text-gray-500 dark:text-gray-400 text-xs hidden sm:block">
               Watch your productivity flourish
             </p>
           </div>
           
-          {/* Enhanced Season Selector */}
+          {/* Enhanced Season Selector - Mobile Optimized */}
           <div className="flex justify-center mb-4">
-            <div className="bg-gradient-to-r from-emerald-50 to-blue-50 dark:from-emerald-900/30 dark:to-blue-900/30 rounded-xl p-2 border border-emerald-200/50 dark:border-emerald-700/50 shadow-md">
-              <div className="flex space-x-1">
+            <div className="bg-gradient-to-r from-emerald-50 to-blue-50 dark:from-emerald-900/30 dark:to-blue-900/30 rounded-xl p-2 border border-emerald-200/50 dark:border-emerald-700/50 shadow-md w-full max-w-md">
+              <div className="grid grid-cols-2 sm:flex sm:space-x-1 gap-2 sm:gap-0">
                 {(['spring', 'summer', 'autumn', 'winter'] as const).map((season) => (
                   <button
                     key={season}
@@ -1034,18 +1036,19 @@ export default function DigitalGardenApp() {
                       setCurrentSeason(season);
                       setRevealedPieces(0); // Reset puzzle for new season
                     }}
-                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300 ${
+                    className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-300 touch-manipulation ${
                       currentSeason === season
                         ? 'bg-white dark:bg-gray-600 text-gray-800 dark:text-gray-100 shadow-md transform scale-105'
                         : 'text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 hover:bg-white/50 dark:hover:bg-gray-600/50'
                     }`}
                   >
-                    <span className="mr-2 text-base">
+                    <span className="mr-1 sm:mr-2 text-sm sm:text-base">
                       {season === 'spring' ? '🌸' : 
                        season === 'summer' ? '🌿' : 
                        season === 'autumn' ? '🍂' : '❄️'}
                     </span>
-                    {season.charAt(0).toUpperCase() + season.slice(1)}
+                    <span className="hidden sm:inline">{season.charAt(0).toUpperCase() + season.slice(1)}</span>
+                    <span className="sm:hidden">{season.charAt(0).toUpperCase()}</span>
                   </button>
                 ))}
               </div>
@@ -1059,40 +1062,40 @@ export default function DigitalGardenApp() {
             </p>
           </div>
           
-          {/* Compact Garden Statistics Dashboard */}
+          {/* Compact Garden Statistics Dashboard - Mobile Optimized */}
           <div className="mb-3 p-2 bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-900/30 dark:to-green-900/30 rounded-md border border-emerald-200/50 dark:border-emerald-700/50">
-            <h3 className="text-sm font-semibold text-emerald-800 dark:text-emerald-200 mb-1.5 text-center flex items-center justify-center gap-1">
+            <h3 className="text-sm font-semibold text-emerald-800 dark:text-emerald-200 mb-2 text-center flex items-center justify-center gap-1">
               <span className="text-sm">📊</span>
               Garden Growth
             </h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-1">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-1">
               {/* Total Tasks Completed */}
-              <div className="text-center p-1.5 bg-white/80 dark:bg-gray-700/80 rounded border border-emerald-200/50 dark:border-emerald-600/50">
-                <div className="text-sm font-bold text-emerald-700 dark:text-emerald-300">
+              <div className="text-center p-2 sm:p-1.5 bg-white/80 dark:bg-gray-700/80 rounded border border-emerald-200/50 dark:border-emerald-600/50">
+                <div className="text-base sm:text-sm font-bold text-emerald-700 dark:text-emerald-300">
                   {tasks.filter(task => task.status === 'done').length}
                 </div>
                 <div className="text-xs text-emerald-600 dark:text-emerald-400">Tasks</div>
               </div>
               
               {/* Total Subtasks Completed */}
-              <div className="text-center p-1.5 bg-white/80 dark:bg-gray-700/80 rounded border border-blue-200/50 dark:border-blue-600/50">
-                <div className="text-sm font-bold text-blue-700 dark:text-blue-300">
+              <div className="text-center p-2 sm:p-1.5 bg-white/80 dark:bg-gray-700/80 rounded border border-blue-200/50 dark:border-blue-600/50">
+                <div className="text-base sm:text-sm font-bold text-blue-700 dark:text-blue-300">
                   {tasks.reduce((total, task) => total + task.subtasks.filter(st => st.status === 'done').length, 0)}
                 </div>
                 <div className="text-xs text-blue-600 dark:text-blue-400">Subtasks</div>
               </div>
               
               {/* Total Pomodoros */}
-              <div className="text-center p-1.5 bg-white/80 dark:bg-gray-700/80 rounded border border-amber-200/50 dark:border-amber-600/50">
-                <div className="text-sm font-bold text-amber-700 dark:text-amber-300">
+              <div className="text-center p-2 sm:p-1.5 bg-white/80 dark:bg-gray-700/80 rounded border border-amber-200/50 dark:border-amber-600/50">
+                <div className="text-base sm:text-sm font-bold text-amber-700 dark:text-amber-300">
                   {tasks.reduce((total, task) => total + (task.pomodoros || 0), 0)}
                 </div>
                 <div className="text-xs text-amber-600 dark:text-amber-400">Pomodoros</div>
               </div>
               
               {/* Current Streak */}
-              <div className="text-center p-1.5 bg-white/80 dark:bg-gray-700/80 rounded border border-purple-200/50 dark:border-purple-600/50">
-                <div className="text-sm font-bold text-purple-700 dark:text-purple-300">
+              <div className="text-center p-2 sm:p-1.5 bg-white/80 dark:bg-gray-700/80 rounded border border-purple-200/50 dark:border-purple-600/50">
+                <div className="text-base sm:text-sm font-bold text-purple-700 dark:text-purple-300">
                   {Math.max(...tasks.map(task => task.pomodoros || 0), 0)}
                 </div>
                 <div className="text-xs text-purple-600 dark:text-purple-400">Best Streak</div>
@@ -1100,11 +1103,11 @@ export default function DigitalGardenApp() {
             </div>
           </div>
           
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
             {/* Left Column - Puzzle Illustration (Bigger) */}
-            <div className="lg:col-span-2 space-y-4">
+            <div className="lg:col-span-2 space-y-3 sm:space-y-4">
             {/* Puzzle Canvas - Now handled entirely by ReactPuzzle */}
-            <div className="relative rounded-xl h-96 overflow-hidden bg-white shadow-lg">
+            <div className="relative rounded-xl h-64 sm:h-80 lg:h-96 overflow-hidden bg-white shadow-lg">
               {/* ReactPuzzle Component - Grid-based puzzle system */}
               {(() => {
                     // Get all available images for the current season
@@ -1284,31 +1287,33 @@ export default function DigitalGardenApp() {
           </div>
         </div>
         
-        {/* Tab Navigation - Only for Pomodoro and Tasks */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-900/50 p-2 mb-6 transition-colors duration-300">
+        {/* Tab Navigation - Only for Pomodoro and Tasks - Mobile Optimized */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-900/50 p-2 mb-4 sm:mb-6 transition-colors duration-300">
           <div className="flex space-x-1">
             <button
               onClick={() => setActiveTab('tasks')}
-              className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all duration-200 relative ${
+              className={`flex-1 py-2.5 sm:py-3 px-2 sm:px-4 rounded-lg font-medium transition-all duration-200 relative touch-manipulation ${
                 activeTab === 'tasks'
                   ? 'bg-emerald-600 text-white shadow-md transform scale-[1.02] ring-2 ring-emerald-300 dark:ring-emerald-500'
                   : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
               }`}
             >
-              📝 Task Management
+              <span className="hidden sm:inline">📝 Task Management</span>
+              <span className="sm:hidden">📝 Tasks</span>
               {activeTab === 'tasks' && (
                 <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-emerald-300 dark:bg-emerald-500 rounded-full"></div>
               )}
             </button>
             <button
               onClick={() => setActiveTab('pomodoro')}
-              className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all duration-200 relative ${
+              className={`flex-1 py-2.5 sm:py-3 px-2 sm:px-4 rounded-lg font-medium transition-all duration-200 relative touch-manipulation ${
                 activeTab === 'pomodoro'
                   ? 'bg-emerald-600 text-white shadow-md transform scale-[1.02] ring-2 ring-emerald-300 dark:ring-emerald-500'
                   : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
               }`}
             >
-              🍅 Pomodoro Timer
+              <span className="hidden sm:inline">🍅 Pomodoro Timer</span>
+              <span className="sm:hidden">🍅 Timer</span>
               {activeTab === 'pomodoro' && (
                 <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-emerald-300 dark:bg-emerald-500 rounded-full"></div>
               )}
@@ -1340,10 +1345,10 @@ export default function DigitalGardenApp() {
               
               {/* Mode Tabs will be positioned over the timer on the left side */}
               
-              <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-                {/* Compact Timer Display (2/5 width) */}
+              <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 sm:gap-6">
+                {/* Compact Timer Display (2/5 width) - Mobile Optimized */}
                 <div className="lg:col-span-2 text-center">
-                  {/* Mode Tabs positioned over timer */}
+                  {/* Mode Tabs positioned over timer - Mobile Optimized */}
                   <div className="relative bg-white/80 dark:bg-gray-600/80 backdrop-blur-sm rounded-2xl p-2 mb-4 shadow-inner">
                     {[
                       { key: 'work', label: 'Focus', color: 'bg-emerald-600', shadow: 'shadow-emerald-300/20' },
@@ -1361,14 +1366,15 @@ export default function DigitalGardenApp() {
                             startTimer('longBreak');
                           }
                         }}
-                        className={`relative flex-1 py-3 px-4 rounded-xl text-sm font-semibold transition-all duration-300 ${
+                        className={`relative flex-1 py-2 sm:py-3 px-2 sm:px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 touch-manipulation ${
                           timerState === key 
                             ? `${color} text-white ${shadow} shadow-lg transform scale-105` 
                             : 'text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 hover:bg-white/70 dark:hover:bg-gray-500/70'
                         }`}
                         style={{ width: '33.333%', display: 'inline-block' }}
                       >
-                        {label}
+                        <span className="hidden sm:inline">{label}</span>
+                        <span className="sm:hidden">{label.charAt(0)}</span>
                         {timerState === key && (
                           <div className="absolute inset-0 bg-white/20 rounded-xl"></div>
                         )}
@@ -1376,12 +1382,12 @@ export default function DigitalGardenApp() {
                     ))}
                   </div>
                   
-                  <div className="relative w-64 h-64 mx-auto mb-6">
+                  <div className="relative w-48 h-48 sm:w-64 sm:h-64 mx-auto mb-4 sm:mb-6">
                     {/* Outer glow ring */}
                     <div className={`absolute inset-0 rounded-full ${timerState === 'work' ? 'bg-emerald-600' : timerState === 'shortBreak' ? 'bg-blue-600' : 'bg-yellow-500'} opacity-20 blur-xl animate-pulse`}></div>
                     
-                    {/* Progress Circle Background */}
-                    <svg className="w-64 h-64 transform -rotate-90 relative z-10" viewBox="0 0 100 100">
+                    {/* Progress Circle Background - Mobile Responsive */}
+                    <svg className="w-48 h-48 sm:w-64 sm:h-64 transform -rotate-90 relative z-10" viewBox="0 0 100 100">
                       <defs>
                         <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
                           <stop offset="0%" stopColor="currentColor" stopOpacity="0.3" />
@@ -1432,12 +1438,12 @@ export default function DigitalGardenApp() {
                       />
                     </svg>
                     
-                    {/* Time Text */}
+                    {/* Time Text - Mobile Responsive */}
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-7xl font-mono font-bold bg-gradient-to-b from-gray-800 to-gray-600 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent mb-3 tracking-tight">
+                      <span className="text-5xl sm:text-6xl lg:text-7xl font-mono font-bold bg-gradient-to-b from-gray-800 to-gray-600 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent mb-2 sm:mb-3 tracking-tight">
                         {formatTime(timeLeft)}
                       </span>
-                      <div className={`w-20 h-1.5 ${timerState === 'work' ? 'bg-emerald-600' : timerState === 'shortBreak' ? 'bg-blue-600' : 'bg-yellow-500'} rounded-full opacity-60`}></div>
+                      <div className={`w-16 sm:w-20 h-1 sm:h-1.5 ${timerState === 'work' ? 'bg-emerald-600' : timerState === 'shortBreak' ? 'bg-blue-600' : 'bg-yellow-500'} rounded-full opacity-60`}></div>
                     </div>
 
                                           {/* Pulse effect when active */}
@@ -1455,42 +1461,42 @@ export default function DigitalGardenApp() {
                     )}
                   </div>
                   
-                  {/* Beautiful Timer Controls */}
-                  <div className="flex justify-center items-center space-x-8 mb-6">
+                  {/* Beautiful Timer Controls - Mobile Optimized */}
+                  <div className="flex justify-center items-center space-x-4 sm:space-x-8 mb-4 sm:mb-6">
                       <button
                       onClick={resetTimer}
-                      className="group relative flex items-center justify-center w-16 h-16 rounded-2xl bg-white/80 dark:bg-gray-700/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-600/50 shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300"
+                      className="group relative flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-white/80 dark:bg-gray-700/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-600/50 shadow-lg hover:shadow-xl hover:scale-110 active:scale-95 transition-all duration-300 touch-manipulation"
                       >
-                      <span className="text-gray-600 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-gray-100 transition-colors text-2xl">🔄</span>
+                      <span className="text-gray-600 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-gray-100 transition-colors text-xl sm:text-2xl">🔄</span>
                       <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-gray-100/50 dark:from-gray-600/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                       </button>
                     
                     <button
                       onClick={() => !isRunning ? startTimer('work', currentTaskId) : pauseTimer()}
-                      className={`group relative flex items-center justify-center w-24 h-24 rounded-3xl ${timerState === 'work' ? 'bg-emerald-600' : timerState === 'shortBreak' ? 'bg-blue-600' : 'bg-yellow-500'} text-white shadow-2xl hover:shadow-3xl transform hover:scale-110 transition-all duration-300 active:scale-95`}
+                      className={`group relative flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 rounded-3xl ${timerState === 'work' ? 'bg-emerald-600' : timerState === 'shortBreak' ? 'bg-blue-600' : 'bg-yellow-500'} text-white shadow-2xl hover:shadow-3xl transform hover:scale-110 transition-all duration-300 active:scale-95 touch-manipulation`}
                     >
-                      {isRunning ? <span className="text-3xl">⏸️</span> : <span className="text-3xl ml-1">▶️</span>}
+                      {isRunning ? <span className="text-2xl sm:text-3xl">⏸️</span> : <span className="text-2xl sm:text-3xl ml-1">▶️</span>}
                       <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                       <div className="absolute -inset-1 rounded-3xl bg-gradient-to-r from-white/30 to-transparent opacity-0 group-active:opacity-100 transition-opacity blur-sm"></div>
                     </button>
                   
                     <button
                       onClick={() => startTimer('shortBreak')}
-                      className="group relative flex items-center justify-center w-16 h-16 rounded-2xl bg-white/80 dark:bg-gray-700/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-600/50 shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300"
+                      className="group relative flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-white/80 dark:bg-gray-700/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-600/50 shadow-lg hover:shadow-xl hover:scale-110 active:scale-95 transition-all duration-300 touch-manipulation"
                     >
-                      <span className="text-gray-600 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-gray-100 transition-colors text-2xl">☕</span>
+                      <span className="text-gray-600 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-gray-100 transition-colors text-xl sm:text-2xl">☕</span>
                       <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-gray-100/50 dark:from-gray-600/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     </button>
                   </div>
                   
-                  {/* Compact Timer Statistics */}
+                  {/* Compact Timer Statistics - Mobile Optimized */}
                   <div className="grid grid-cols-2 gap-2 mb-4">
-                    <div className="bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-900/30 dark:to-green-900/30 rounded-lg p-2 text-center border border-emerald-200/50 dark:border-emerald-700/50 shadow-sm hover:shadow-md transition-all duration-300 transform hover:scale-105">
-                      <div className="text-lg font-bold text-emerald-700 dark:text-emerald-300">{completedPomodoros}</div>
+                    <div className="bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-900/30 dark:to-green-900/30 rounded-lg p-2 text-center border border-emerald-200/50 dark:border-emerald-700/50 shadow-sm hover:shadow-md transition-all duration-300 transform hover:scale-105 active:scale-95 touch-manipulation">
+                      <div className="text-base sm:text-lg font-bold text-emerald-700 dark:text-emerald-300">{completedPomodoros}</div>
                       <div className="text-xs text-emerald-800 dark:text-emerald-200">Pomodoros</div>
                     </div>
-                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-lg p-2 text-center border border-blue-200/50 dark:border-blue-700/50 shadow-sm hover:shadow-md transition-all duration-300 transform hover:scale-105">
-                      <div className="text-lg font-bold text-blue-700 dark:text-blue-300">{completedSessions}</div>
+                    <div className="bg-gradient-to-br from-blue-50 to-indigo-700 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-lg p-2 text-center border border-blue-200/50 dark:border-blue-700/50 shadow-sm hover:shadow-md transition-all duration-300 transform hover:scale-105 active:scale-95 touch-manipulation">
+                      <div className="text-base sm:text-lg font-bold text-blue-700 dark:text-blue-300">{completedSessions}</div>
                       <div className="text-xs text-blue-800 dark:text-blue-200">Sessions</div>
                     </div>
                   </div>

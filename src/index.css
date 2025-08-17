@@ -2,6 +2,68 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Mobile-First CSS Optimizations */
+
+/* Prevent text selection on mobile for better UX */
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Allow text selection in input fields and content areas */
+input, textarea, [contenteditable] {
+  -webkit-user-select: text;
+  -khtml-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+
+/* Smooth scrolling for mobile */
+html {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Mobile-optimized button interactions */
+button {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* Mobile-optimized form elements */
+input, textarea, select {
+  -webkit-appearance: none;
+  border-radius: 0;
+  touch-action: manipulation;
+}
+
+/* Mobile-optimized scrolling */
+.scroll-container {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Mobile-specific animations */
+@media (max-width: 640px) {
+  .mobile-optimized {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+  }
+  
+  /* Reduce motion on mobile for better performance */
+  .reduce-motion {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
 /* Custom CSS for Garden Visual Enhancements */
 
 /* Wave Animations */
