@@ -1027,8 +1027,8 @@ export default function DigitalGardenApp() {
           
           {/* Enhanced Season Selector - Mobile Optimized */}
           <div className="flex justify-center mb-4">
-            <div className="bg-gradient-to-r from-emerald-50 to-blue-50 dark:from-emerald-900/30 dark:to-blue-900/30 rounded-xl p-2 border border-emerald-200/50 dark:border-emerald-700/50 shadow-md w-full max-w-md">
-              <div className="grid grid-cols-2 sm:flex sm:space-x-1 gap-2 sm:gap-0">
+            <div className="bg-gradient-to-r from-emerald-50 to-blue-50 dark:from-emerald-900/30 dark:to-blue-900/30 rounded-xl p-1.5 sm:p-2 border border-emerald-200/50 dark:border-emerald-700/50 shadow-md w-full max-w-md">
+              <div className="grid grid-cols-2 sm:flex sm:space-x-1 gap-1.5 sm:gap-0">
                 {(['spring', 'summer', 'autumn', 'winter'] as const).map((season) => (
                   <button
                     key={season}
@@ -1036,19 +1036,18 @@ export default function DigitalGardenApp() {
                       setCurrentSeason(season);
                       setRevealedPieces(0); // Reset puzzle for new season
                     }}
-                    className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-300 touch-manipulation ${
+                    className={`px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs font-semibold transition-all duration-300 touch-manipulation ${
                       currentSeason === season
                         ? 'bg-white dark:bg-gray-600 text-gray-800 dark:text-gray-100 shadow-md transform scale-105'
                         : 'text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 hover:bg-white/50 dark:hover:bg-gray-600/50'
                     }`}
                   >
-                    <span className="mr-1 sm:mr-2 text-sm sm:text-base">
+                    <span className="mr-1 sm:mr-2 text-xs sm:text-base">
                       {season === 'spring' ? '🌸' : 
                        season === 'summer' ? '🌿' : 
                        season === 'autumn' ? '🍂' : '❄️'}
                     </span>
-                    <span className="hidden sm:inline">{season.charAt(0).toUpperCase() + season.slice(1)}</span>
-                    <span className="sm:hidden">{season.charAt(0).toUpperCase()}</span>
+                    <span className="text-xs sm:text-sm">{season.charAt(0).toUpperCase() + season.slice(1)}</span>
                   </button>
                 ))}
               </div>
@@ -1063,39 +1062,39 @@ export default function DigitalGardenApp() {
           </div>
           
           {/* Compact Garden Statistics Dashboard - Mobile Optimized */}
-          <div className="mb-3 p-2 bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-900/30 dark:to-green-900/30 rounded-md border border-emerald-200/50 dark:border-emerald-700/50">
-            <h3 className="text-sm font-semibold text-emerald-800 dark:text-emerald-200 mb-2 text-center flex items-center justify-center gap-1">
-              <span className="text-sm">📊</span>
+          <div className="mb-3 p-1.5 sm:p-2 bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-900/30 dark:to-green-900/30 rounded-md border border-emerald-200/50 dark:border-emerald-700/50">
+            <h3 className="text-xs sm:text-sm font-semibold text-emerald-800 dark:text-emerald-200 mb-1.5 sm:mb-2 text-center flex items-center justify-center gap-1">
+              <span className="text-xs sm:text-sm">📊</span>
               Garden Growth
             </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-1">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-1">
               {/* Total Tasks Completed */}
-              <div className="text-center p-2 sm:p-1.5 bg-white/80 dark:bg-gray-700/80 rounded border border-emerald-200/50 dark:border-emerald-600/50">
-                <div className="text-base sm:text-sm font-bold text-emerald-700 dark:text-emerald-300">
+              <div className="text-center p-1.5 sm:p-1.5 bg-white/80 dark:bg-gray-700/80 rounded border border-emerald-200/50 dark:border-emerald-600/50">
+                <div className="text-sm font-bold text-emerald-700 dark:text-emerald-300">
                   {tasks.filter(task => task.status === 'done').length}
                 </div>
                 <div className="text-xs text-emerald-600 dark:text-emerald-400">Tasks</div>
               </div>
               
               {/* Total Subtasks Completed */}
-              <div className="text-center p-2 sm:p-1.5 bg-white/80 dark:bg-gray-700/80 rounded border border-blue-200/50 dark:border-blue-600/50">
-                <div className="text-base sm:text-sm font-bold text-blue-700 dark:text-blue-300">
+              <div className="text-center p-1.5 sm:p-1.5 bg-white/80 dark:bg-gray-700/80 rounded border border-blue-200/50 dark:border-blue-600/50">
+                <div className="text-sm font-bold text-blue-700 dark:text-blue-300">
                   {tasks.reduce((total, task) => total + task.subtasks.filter(st => st.status === 'done').length, 0)}
                 </div>
                 <div className="text-xs text-blue-600 dark:text-blue-400">Subtasks</div>
               </div>
               
               {/* Total Pomodoros */}
-              <div className="text-center p-2 sm:p-1.5 bg-white/80 dark:bg-gray-700/80 rounded border border-amber-200/50 dark:border-amber-600/50">
-                <div className="text-base sm:text-sm font-bold text-amber-700 dark:text-amber-300">
+              <div className="text-center p-1.5 sm:p-1.5 bg-white/80 dark:bg-gray-700/80 rounded border border-amber-200/50 dark:border-amber-600/50">
+                <div className="text-sm font-bold text-amber-700 dark:text-amber-300">
                   {tasks.reduce((total, task) => total + (task.pomodoros || 0), 0)}
                 </div>
                 <div className="text-xs text-amber-600 dark:text-amber-400">Pomodoros</div>
               </div>
               
               {/* Current Streak */}
-              <div className="text-center p-2 sm:p-1.5 bg-white/80 dark:bg-gray-700/80 rounded border border-purple-200/50 dark:border-purple-600/50">
-                <div className="text-base sm:text-sm font-bold text-purple-700 dark:text-purple-300">
+              <div className="text-center p-1.5 sm:p-1.5 bg-white/80 dark:bg-gray-700/80 rounded border border-purple-200/50 dark:border-purple-600/50">
+                <div className="text-sm font-bold text-purple-700 dark:text-purple-300">
                   {Math.max(...tasks.map(task => task.pomodoros || 0), 0)}
                 </div>
                 <div className="text-xs text-purple-600 dark:text-purple-400">Best Streak</div>
@@ -1366,15 +1365,14 @@ export default function DigitalGardenApp() {
                             startTimer('longBreak');
                           }
                         }}
-                        className={`relative flex-1 py-2 sm:py-3 px-2 sm:px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 touch-manipulation ${
+                        className={`relative flex-1 py-2 sm:py-3 px-1 sm:px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 touch-manipulation ${
                           timerState === key 
                             ? `${color} text-white ${shadow} shadow-lg transform scale-105` 
                             : 'text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 hover:bg-white/70 dark:hover:bg-gray-500/70'
                         }`}
                         style={{ width: '33.333%', display: 'inline-block' }}
                       >
-                        <span className="hidden sm:inline">{label}</span>
-                        <span className="sm:hidden">{label.charAt(0)}</span>
+                        <span className="text-xs sm:text-sm">{label}</span>
                         {timerState === key && (
                           <div className="absolute inset-0 bg-white/20 rounded-xl"></div>
                         )}
@@ -1495,7 +1493,7 @@ export default function DigitalGardenApp() {
                       <div className="text-base sm:text-lg font-bold text-emerald-700 dark:text-emerald-300">{completedPomodoros}</div>
                       <div className="text-xs text-emerald-800 dark:text-emerald-200">Pomodoros</div>
                     </div>
-                    <div className="bg-gradient-to-br from-blue-50 to-indigo-700 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-lg p-2 text-center border border-blue-200/50 dark:border-blue-700/50 shadow-sm hover:shadow-md transition-all duration-300 transform hover:scale-105 active:scale-95 touch-manipulation">
+                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 rounded-lg p-2 text-center border border-blue-200/50 dark:border-blue-700/50 shadow-sm hover:shadow-md transition-all duration-300 transform hover:scale-105 active:scale-95 touch-manipulation">
                       <div className="text-base sm:text-lg font-bold text-blue-700 dark:text-blue-300">{completedSessions}</div>
                       <div className="text-xs text-blue-800 dark:text-blue-200">Sessions</div>
                     </div>
@@ -1771,11 +1769,11 @@ export default function DigitalGardenApp() {
 
 
         
-        <div className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400 transition-colors duration-300">
-          <p>💡 <strong>Tips:</strong> Click on a task title to edit it, click the checkbox to mark as complete/incomplete</p>
-          <p className="mt-1">🌿 <strong>Subtasks:</strong> Use the +⊂ button to add nested tasks, click ▼/▶ to expand/collapse</p>
-          <p className="mt-1">🧩 <strong>Puzzle:</strong> Complete tasks to reveal seasonal garden images - each completion reveals a new puzzle piece!</p>
-          <p className="mt-1">📱 <strong>Drag & Drop:</strong> Drag main tasks by the ⋮⋮ handle to reorder them by priority!</p>
+        <div className="mt-4 sm:mt-6 text-center text-xs sm:text-sm text-gray-600 dark:text-gray-400 transition-colors duration-300">
+          <p className="mb-1 sm:mb-0.5">💡 <strong>Tips:</strong> Click task title to edit, checkbox to complete</p>
+          <p className="mb-1 sm:mb-0.5">🌿 <strong>Subtasks:</strong> +⊂ to add, ▼/▶ to expand</p>
+          <p className="mb-1 sm:mb-0.5">🧩 <strong>Puzzle:</strong> Complete tasks to reveal garden pieces!</p>
+          <p className="mb-1 sm:mb-0.5">📱 <strong>Reorder:</strong> Drag ⋮⋮ handle to prioritize</p>
         </div>
       </div>
       
