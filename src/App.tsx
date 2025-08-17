@@ -1723,14 +1723,14 @@ export default function DigitalGardenApp() {
         
         {activeTab === 'tasks' && (
           <>
-            {/* Task Management */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-900/50 p-6 transition-colors duration-300">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100 transition-colors duration-300">Your Tasks</h2>
-                <div className="flex gap-3">
+            {/* Task Management - Mobile Optimized */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-900/50 p-4 sm:p-6 transition-colors duration-300">
+              <div className="flex justify-between items-center mb-4 sm:mb-6">
+                <h2 className="text-lg sm:text-2xl font-semibold text-gray-800 dark:text-gray-100 transition-colors duration-300">Your Tasks</h2>
+                <div className="flex gap-2 sm:gap-3">
                 <button
                   onClick={addTask}
-                  className="bg-emerald-500 hover:bg-emerald-600 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                  className="bg-emerald-500 hover:bg-emerald-600 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm sm:text-base font-medium transition-colors"
                 >
                   + Add Task
                 </button>
@@ -1745,7 +1745,7 @@ export default function DigitalGardenApp() {
                         setExpandedTasks(new Set());
                       }
                     }}
-                    className="bg-rose-400 hover:bg-rose-500 dark:bg-rose-500 dark:hover:bg-rose-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                    className="bg-rose-400 hover:bg-rose-500 dark:bg-rose-500 dark:hover:bg-rose-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm sm:text-base font-medium transition-colors"
                     title="Clear all tasks and reset puzzle progress"
                   >
                     🗑️ Clear All Data
@@ -1758,8 +1758,8 @@ export default function DigitalGardenApp() {
               </div>
               
               {tasks.length === 0 && (
-                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                  <p className="text-lg">No tasks yet! Click "Add Task" to start growing your garden.</p>
+                <div className="text-center py-6 sm:py-8 text-gray-500 dark:text-gray-400">
+                  <p className="text-base sm:text-lg">No tasks yet! Click "Add Task" to start growing your garden.</p>
                 </div>
               )}
             </div>
