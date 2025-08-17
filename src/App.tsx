@@ -1027,8 +1027,8 @@ export default function DigitalGardenApp() {
           
           {/* Enhanced Season Selector - Mobile Optimized */}
           <div className="flex justify-center mb-4">
-            <div className="bg-gradient-to-r from-emerald-50 to-blue-50 dark:from-emerald-900/30 dark:to-blue-900/30 rounded-xl p-1.5 sm:p-2 border border-emerald-200/50 dark:border-emerald-700/50 shadow-md w-full max-w-md">
-              <div className="grid grid-cols-2 sm:flex sm:space-x-1 gap-1.5 sm:gap-0">
+            <div className="bg-gradient-to-r from-emerald-50 to-blue-50 dark:from-emerald-900/30 dark:to-blue-900/30 rounded-xl p-2 sm:p-3 border border-emerald-200/50 dark:border-emerald-700/50 shadow-md w-full max-w-md">
+              <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
                 {(['spring', 'summer', 'autumn', 'winter'] as const).map((season) => (
                   <button
                     key={season}
@@ -1036,18 +1036,18 @@ export default function DigitalGardenApp() {
                       setCurrentSeason(season);
                       setRevealedPieces(0); // Reset puzzle for new season
                     }}
-                    className={`px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs font-semibold transition-all duration-300 touch-manipulation ${
+                    className={`flex flex-col items-center justify-center px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg text-xs font-medium transition-all duration-300 touch-manipulation min-w-[60px] sm:min-w-[70px] ${
                       currentSeason === season
-                        ? 'bg-white dark:bg-gray-600 text-gray-800 dark:text-gray-100 shadow-md transform scale-105'
-                        : 'text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 hover:bg-white/50 dark:hover:bg-gray-600/50'
+                        ? 'bg-white dark:bg-gray-600 text-gray-800 dark:text-gray-100 shadow-lg transform scale-105 ring-2 ring-emerald-200 dark:ring-emerald-500'
+                        : 'text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 hover:bg-white/60 dark:hover:bg-gray-600/60 hover:scale-105'
                     }`}
                   >
-                    <span className="mr-1 sm:mr-2 text-xs sm:text-base">
+                    <span className="text-base sm:text-lg mb-1">
                       {season === 'spring' ? '🌸' : 
                        season === 'summer' ? '🌿' : 
                        season === 'autumn' ? '🍂' : '❄️'}
                     </span>
-                    <span className="text-xs sm:text-sm">{season.charAt(0).toUpperCase() + season.slice(1)}</span>
+                    <span className="text-xs sm:text-sm font-semibold">{season.charAt(0).toUpperCase() + season.slice(1)}</span>
                   </button>
                 ))}
               </div>
