@@ -8,6 +8,34 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- Firebase ES Module CDN -->
+    <script type="module">
+      // Import the functions you need from the SDKs you need
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+      import { getAuth } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+      import { getFirestore } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+      // Your web app's Firebase configuration
+      const firebaseConfig = {
+        apiKey: "AIzaSyBjaLi6_brDQqQ198cPgV30ITltdNLQBGg",
+        authDomain: "task-garden-38324.firebaseapp.com",
+        projectId: "task-garden-38324",
+        storageBucket: "task-garden-38324.firebasestorage.app",
+        messagingSenderId: "744010796330",
+        appId: "1:744010796330:web:a14362b3ec3117e80c6253"
+      };
+
+      // Initialize Firebase and make it globally available
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const db = getFirestore(app);
+      
+      // Make Firebase available globally for our app to use
+      window.firebaseApp = app;
+      window.firebaseAuth = auth;
+      window.firebaseDb = db;
+    </script>
+    
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

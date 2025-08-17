@@ -1,4 +1,8 @@
-import React, { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect } from "react";
+// import { useAuth } from "./AuthContext";
+import { signIn, signUp } from "./firebase";
+// import { logOut } from "./firebase";
+// import Auth from "./Auth.jsx";
 
 interface Task {
   id: string;
@@ -9,7 +13,116 @@ interface Task {
 }
 
 export default function DigitalGardenApp() {
+  // User state management
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [showAuth, setShowAuth] = useState(false);
+  const [authEmail, setAuthEmail] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [authError, setAuthError] = useState("");
+  const [isSigningIn, setIsSigningIn] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [isLoadingTasks, setIsLoadingTasks] = useState(false);
   const [tasks, setTasks] = useState<Task[]>([]);
+
+  // Preload Firebase modules for faster performance
+  useEffect(() => {
+    const preloadFirebase = async () => {
+      try {
+        // Preload firebase module in background
+        await import("./firebase");
+        console.log("Firebase module preloaded for faster task loading");
+      } catch (error) {
+        console.warn("Could not preload Firebase module");
+      }
+    };
+    
+    // Preload after a short delay to ensure app is ready
+    const timeoutId = setTimeout(preloadFirebase, 500);
+    return () => clearTimeout(timeoutId);
+  }, []);
+
+  // Save tasks to Firebase whenever they change
+  useEffect(() => {
+    if (currentUser && tasks.length > 0) {
+      const saveTasksToFirebase = async () => {
+        try {
+          const { saveTasks } = await import("./firebase");
+          await saveTasks(currentUser.uid, tasks);
+        } catch (error) {
+          console.warn("Could not save tasks to Firebase");
+        }
+      };
+      
+      // Debounce the save to avoid too many Firebase calls
+      const timeoutId = setTimeout(saveTasksToFirebase, 1000);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [tasks, currentUser]);
+
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      const { logOut } = await import("./firebase");
+      await logOut();
+      setCurrentUser(null);
+      setTasks([]); // Clear tasks on logout
+      console.log("User logged out successfully");
+    } catch (error: any) {
+      console.error("Logout error", error);
+    }
+  };
+
+  // Handle authentication
+  const handleAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError("");
+    setIsSigningIn(true);
+
+    try {
+      if (authEmail && authPassword) {
+        // Call real Firebase authentication
+        let userResult;
+        if (isSignUp) {
+          userResult = await signUp(authEmail, authPassword);
+          console.log("Firebase sign up successful:", authEmail);
+        } else {
+          userResult = await signIn(authEmail, authPassword);
+          console.log("Firebase login successful:", authEmail);
+        }
+        
+        // Set the current user and close modal immediately
+        setCurrentUser(userResult.user);
+        setShowAuth(false);
+        setAuthEmail("");
+        setAuthPassword("");
+        
+        // Load user's saved tasks in the background (non-blocking)
+        // Load user's saved tasks in the background (non-blocking)
+        setIsLoadingTasks(true);
+        
+        // Start loading immediately (no delay)
+        (async () => {
+          try {
+            const { loadTasks } = await import("./firebase");
+            const savedTasks = await loadTasks(userResult.user.uid);
+            setTasks(savedTasks);
+            console.log("User tasks loaded from Firebase");
+          } catch (error) {
+            console.warn("Could not load tasks, starting fresh");
+            setTasks([]);
+          } finally {
+            setIsLoadingTasks(false);
+          }
+        })();
+      } else {
+        setAuthError("Please fill in all fields");
+      }
+    } catch (error: any) {
+      setAuthError(error.message || "Authentication failed. Please try again.");
+    } finally {
+      setIsSigningIn(false);
+    }
+  };
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
@@ -31,6 +144,7 @@ export default function DigitalGardenApp() {
   const [currentSeason, setCurrentSeason] = useState<'spring' | 'summer' | 'autumn' | 'winter'>('spring');
   const [revealedPieces, setRevealedPieces] = useState<number>(0);
   const [puzzleVersion, setPuzzleVersion] = useState(0); // Force new random image selection
+
   
   // Seasonal garden configurations
   const seasonalGardens = {
@@ -59,7 +173,7 @@ export default function DigitalGardenApp() {
       theme: '❄️ Winter Serenity'
     }
   };
-  
+
   // Get current season based on date
   useEffect(() => {
     const month = new Date().getMonth();
@@ -68,13 +182,10 @@ export default function DigitalGardenApp() {
     else if (month >= 8 && month <= 10) setCurrentSeason('autumn');
     else setCurrentSeason('winter');
   }, []);
-  
-  // Debug logging for overlay
-  useEffect(() => {
-    // Removed debug logging
-  }, [revealedPieces, currentSeason]);
-  
-  // Reveal puzzle piece when task is completed
+
+
+
+  // Reveal puzzle piece function
   const revealPuzzlePiece = () => {
     const currentGarden = seasonalGardens[currentSeason];
     if (revealedPieces < currentGarden.pieces) {
@@ -129,55 +240,7 @@ export default function DigitalGardenApp() {
 
   
 
-  // Generate puzzle pieces for current garden
-  const puzzlePieces = useMemo(() => {
-    const currentGarden = seasonalGardens[currentSeason];
-    const pieces = [];
-    const cols = Math.ceil(Math.sqrt(currentGarden.pieces));
-    const rows = Math.ceil(currentGarden.pieces / cols);
-    
-    // Get the main image for current season
-    const getSeasonMainImage = (season: string) => {
-      switch (season) {
-        case 'spring':
-          return '/images/spring/Copilot_20250815_213440.png';
-        case 'autumn':
-          return '/images/autumn/cozy-autumn-scene-house-path-flowers.jpg';
-        case 'summer':
-          return null;
-        case 'winter':
-          return null;
-        default:
-          return null;
-      }
-    };
-    
-    const mainImage = getSeasonMainImage(currentSeason);
-    const hasImage = mainImage !== null;
-    
-    for (let i = 0; i < currentGarden.pieces; i++) {
-      const row = Math.floor(i / cols);
-      const col = i % cols;
-      const isRevealed = i < revealedPieces;
-      
-      pieces.push({
-        id: `piece-${i}`,
-        row,
-        col,
-        isRevealed,
-        delay: i * 0.1,
-        imageSrc: mainImage,
-        hasImage,
-        // Calculate the background position for this piece
-        bgPosition: {
-          x: -(col * (100 / cols)),
-          y: -(row * (100 / rows))
-        }
-      });
-    }
-    
-    return pieces;
-  }, [currentSeason, revealedPieces]);
+
 
   // Dynamic day/night cycle effect
   const timeOfDay = useMemo(() => {
@@ -311,7 +374,7 @@ export default function DigitalGardenApp() {
 
   // Timer countdown effect
   useEffect(() => {
-    let interval: number;
+    let interval: ReturnType<typeof setInterval>;
     
     if (isRunning && timeLeft > 0) {
       interval = setInterval(() => {
@@ -409,24 +472,24 @@ export default function DigitalGardenApp() {
   const toggleStatus = (id: string, parentId?: string) => {
     setTasks(prevTasks => {
       const updatedTasks = prevTasks.map(task => {
-        if (parentId) {
-          if (task.id === parentId) {
-            return {
-              ...task,
-              subtasks: task.subtasks.map(subtask =>
-                subtask.id === id
+      if (parentId) {
+        if (task.id === parentId) {
+          return {
+            ...task,
+            subtasks: task.subtasks.map(subtask =>
+              subtask.id === id
                   ? { ...subtask, status: (subtask.status === 'done' ? 'todo' : 'done') as 'todo' | 'done' }
-                  : subtask
-              )
-            };
-          }
-          return task;
-        } else {
-          if (task.id === id) {
-            return { ...task, status: (task.status === 'done' ? 'todo' : 'done') as 'todo' | 'done' };
-          }
-          return task;
+                : subtask
+            )
+          };
         }
+        return task;
+      } else {
+        if (task.id === id) {
+            return { ...task, status: (task.status === 'done' ? 'todo' : 'done') as 'todo' | 'done' };
+        }
+        return task;
+      }
       });
       
       // Check if this task/subtask was just completed
@@ -480,11 +543,11 @@ export default function DigitalGardenApp() {
         ));
       } else {
         // Editing a main task
-        setTasks(tasks.map(task => 
-          task.id === editingId 
-            ? { ...task, title: editingTitle.trim() }
-            : task
-        ));
+      setTasks(tasks.map(task => 
+        task.id === editingId 
+          ? { ...task, title: editingTitle.trim() }
+          : task
+      ));
       }
     }
     setEditingId(null);
@@ -654,24 +717,7 @@ export default function DigitalGardenApp() {
     oscillator.stop(audioContext.currentTime + 0.5);
   };
 
-  const toggleTask = (id: string) => {
-    setTasks(prevTasks => {
-      const updatedTasks = prevTasks.map(task => 
-        task.id === id 
-          ? { ...task, status: (task.status === 'done' ? 'todo' : 'done') as 'todo' | 'done' }
-          : task
-      );
-      
-      // Check if this task was just completed (status changed to 'done')
-      const updatedTask = updatedTasks.find(t => t.id === id);
-      if (updatedTask && updatedTask.status === 'done') {
-        // Task was just completed, reveal puzzle piece
-        setTimeout(() => revealPuzzlePiece(), 0);
-      }
-      
-      return updatedTasks;
-    });
-  };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-zinc-50 p-8">
@@ -679,6 +725,55 @@ export default function DigitalGardenApp() {
         <h1 className="text-4xl font-bold text-emerald-800 mb-8 text-center">
           🌱 Task Garden
         </h1>
+        
+                  {/* Header with User Management */}
+          <div className="flex justify-between items-center mb-6">
+            <div className="text-sm text-gray-600">
+              <div className="text-gray-500">
+                {currentUser ? `Welcome back, ${currentUser.email}! 🌱` : "Welcome to Task Garden! 🌱"}
+              </div>
+            </div>
+            <div>
+              {currentUser ? (
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 bg-emerald-50 px-3 py-2 rounded-lg border border-emerald-200">
+                    <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+                    <span className="text-sm text-emerald-700 font-medium">
+                      {currentUser.email}
+                    </span>
+                    {isLoadingTasks && (
+                      <div className="flex items-center gap-1 text-xs text-emerald-600">
+                        <svg className="animate-spin w-3 h-3" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Loading...
+                      </div>
+                    )}
+                  </div>
+                  <button 
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 border border-red-200 hover:border-red-300 hover:shadow-sm"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    Sign Out
+                  </button>
+                </div>
+              ) : (
+                <button 
+                  onClick={() => setShowAuth(true)}
+                  className="flex items-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 border border-emerald-200 hover:border-emerald-300 hover:shadow-sm"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                  </svg>
+                  Sign In
+                </button>
+              )}
+            </div>
+          </div>
         
         {/* Garden Visualization - Always Visible */}
         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
@@ -793,16 +888,12 @@ export default function DigitalGardenApp() {
                       return (
                         <div 
                           className="w-full h-full rounded-lg"
-                          style={{
+                      style={{
                             background: `linear-gradient(135deg, ${seasonalGardens[currentSeason].colors[0]}, ${seasonalGardens[currentSeason].colors[1]})`
                           }}
                         />
                       );
                     }
-                    
-                    // Calculate opacity based on revealed pieces
-                    const totalPieces = seasonalGardens[currentSeason].pieces;
-                    const opacity = revealedPieces / totalPieces; // 0 to 1
                     
                     return (
                       <div className="w-full h-full relative">
@@ -812,7 +903,7 @@ export default function DigitalGardenApp() {
                           alt="Seasonal Garden"
                           className="w-full h-full object-cover rounded-lg transition-opacity duration-1000"
                           style={{
-                            opacity: opacity
+                            opacity: revealedPieces / seasonalGardens[currentSeason].pieces
                           }}
                         />
                         
@@ -821,10 +912,12 @@ export default function DigitalGardenApp() {
                           className="absolute inset-0 transition-opacity duration-1000 rounded-lg"
                           style={{
                             background: `linear-gradient(135deg, ${seasonalGardens[currentSeason].colors[0]}, ${seasonalGardens[currentSeason].colors[1]})`,
-                            opacity: 1 - opacity, // Inverse of image opacity
+                            opacity: 1 - (revealedPieces / seasonalGardens[currentSeason].pieces), // Inverse of image opacity
                             zIndex: 10
                           }}
                         />
+                        
+
                       </div>
                     );
                   })()}
@@ -1185,12 +1278,12 @@ export default function DigitalGardenApp() {
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-semibold text-gray-800">Your Tasks</h2>
                 <div className="flex gap-3">
-                  <button
-                    onClick={addTask}
-                    className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-                  >
-                    + Add Task
-                  </button>
+                <button
+                  onClick={addTask}
+                  className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                >
+                  + Add Task
+                </button>
                   <button
                     onClick={() => {
                       if (window.confirm('Are you sure you want to clear all data? This will remove all tasks and reset puzzle progress. This action cannot be undone.')) {
@@ -1232,6 +1325,131 @@ export default function DigitalGardenApp() {
                           <p className="mt-1">🧩 <strong>Puzzle:</strong> Complete tasks to reveal seasonal garden images - each completion reveals a new puzzle piece!</p>
         </div>
       </div>
+      
+              {/* Beautiful Authentication Modal */}
+        {showAuth && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl border border-gray-100 overflow-hidden">
+              {/* Header with gradient */}
+              <div className="bg-gradient-to-r from-emerald-400 to-teal-500 p-8 text-center text-white">
+                <div className="text-4xl mb-2">🌱</div>
+                <h2 className="text-2xl font-bold mb-2">
+                  {isSignUp ? "Join Task Garden" : "Welcome Back"}
+                </h2>
+                <p className="text-emerald-50 text-sm">
+                  {isSignUp ? "Create your account and start growing" : "Sign in to continue your journey"}
+                </p>
+              </div>
+
+              {/* Form section */}
+              <div className="p-8">
+                <form onSubmit={handleAuth} className="space-y-6">
+                  {authError && (
+                    <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded-lg">
+                      <div className="flex">
+                        <div className="flex-shrink-0">
+                          <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        <div className="ml-3">
+                          <p className="text-sm text-red-700">{authError}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div>
+                    <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
+                      Email Address
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                        </svg>
+                      </div>
+                      <input
+                        id="email"
+                        type="email"
+                        value={authEmail}
+                        onChange={(e) => setAuthEmail(e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200"
+                        placeholder="Enter your email"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
+                      Password
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                      </div>
+                      <input
+                        id="password"
+                        type="password"
+                        value={authPassword}
+                        onChange={(e) => setAuthPassword(e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200"
+                        placeholder="Enter your password"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isSigningIn}
+                    className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white py-4 px-6 rounded-xl font-semibold hover:from-emerald-600 hover:to-teal-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    {isSigningIn ? (
+                      <div className="flex items-center justify-center">
+                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        {isSignUp ? "Creating Account..." : "Signing In..."}
+                      </div>
+                    ) : (
+                      isSignUp ? "Create Account" : "Sign In"
+                    )}
+                  </button>
+
+                  <div className="text-center pt-4">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsSignUp(!isSignUp);
+                        setAuthError("");
+                        setAuthEmail("");
+                        setAuthPassword("");
+                      }}
+                      className="text-sm text-emerald-600 hover:text-emerald-700 font-medium transition-colors duration-200 hover:underline"
+                    >
+                      {isSignUp ? "Already have an account? Sign In" : "Don't have an account? Sign Up"}
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              {/* Close button */}
+              <button
+                onClick={() => setShowAuth(false)}
+                className="absolute top-6 right-6 text-white hover:text-gray-200 transition-colors duration-200 p-2 rounded-full hover:bg-white/20"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
     </div>
   );
 }
