@@ -24,6 +24,10 @@ export default function DigitalGardenApp() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [isLoadingTasks, setIsLoadingTasks] = useState(false);
   const [tasks, setTasks] = useState<Task[]>([]);
+  
+  // Drag and drop state
+  const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
+  const [dragOverTaskId, setDragOverTaskId] = useState<string | null>(null);
 
   // Preload Firebase modules for faster performance
   useEffect(() => {
@@ -178,7 +182,7 @@ export default function DigitalGardenApp() {
       theme: '❄️ Winter Serenity'
     }
   };
-
+  
   // Get current season based on date
   useEffect(() => {
     const month = new Date().getMonth();
@@ -187,7 +191,7 @@ export default function DigitalGardenApp() {
     else if (month >= 8 && month <= 10) setCurrentSeason('autumn');
     else setCurrentSeason('winter');
   }, []);
-
+  
   // Listen for lofi thumbnail selection events
   useEffect(() => {
     const handleLofiThumbnail = (event: CustomEvent) => {
@@ -492,11 +496,17 @@ export default function DigitalGardenApp() {
   const addTask = () => {
     const newTask: Task = {
       id: Date.now().toString(),
-      title: "New Task",
+      title: "Click to edit new task",
       status: "todo",
       subtasks: []
     };
     setTasks([...tasks, newTask]);
+    
+    // Start editing the new task immediately
+    setTimeout(() => {
+      setEditingId(newTask.id);
+      setEditingTitle("Click to edit new task");
+    }, 100);
   };
 
   const addSubtask = (parentId: string) => {
@@ -620,6 +630,46 @@ export default function DigitalGardenApp() {
     }
   };
 
+  // Drag and drop functions for reordering tasks
+  const handleDragStart = (e: React.DragEvent, taskId: string) => {
+    setDraggedTaskId(taskId);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent, taskId: string) => {
+    e.preventDefault();
+    if (draggedTaskId && draggedTaskId !== taskId) {
+      setDragOverTaskId(taskId);
+    }
+  };
+
+  const handleDragLeave = () => {
+    setDragOverTaskId(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, targetTaskId: string) => {
+    e.preventDefault();
+    if (draggedTaskId && draggedTaskId !== targetTaskId) {
+      // Reorder tasks by moving the dragged task to the target position
+      setTasks(prevTasks => {
+        const draggedTask = prevTasks.find(task => task.id === draggedTaskId);
+        if (!draggedTask) return prevTasks;
+        
+        const otherTasks = prevTasks.filter(task => task.id !== draggedTaskId);
+        const targetIndex = otherTasks.findIndex(task => task.id === targetTaskId);
+        
+        if (targetIndex === -1) return prevTasks;
+        
+        const newTasks = [...otherTasks];
+        newTasks.splice(targetIndex, 0, draggedTask);
+        
+        return newTasks;
+      });
+    }
+    setDraggedTaskId(null);
+    setDragOverTaskId(null);
+  };
+
   const toggleExpanded = (taskId: string) => {
     setExpandedTasks(prev => {
       const newSet = new Set(prev);
@@ -637,9 +687,24 @@ export default function DigitalGardenApp() {
     const hasSubtasks = task.subtasks.length > 0;
     
     return (
-      <div key={task.id} className={`${level > 0 ? 'ml-6 border-l-2 border-emerald-200 pl-4' : ''}`}>
+      <div 
+        key={task.id} 
+        className={`${level > 0 ? 'ml-6 border-l-2 border-emerald-200 pl-4' : ''} ${
+          draggedTaskId === task.id ? 'opacity-50' : ''
+        } ${dragOverTaskId === task.id ? 'border-2 border-dashed border-emerald-400 bg-emerald-50' : ''}`}
+        draggable={level === 0} // Only main tasks are draggable
+        onDragStart={(e) => level === 0 && handleDragStart(e, task.id)}
+        onDragOver={(e) => level === 0 && handleDragOver(e, task.id)}
+        onDragLeave={handleDragLeave}
+        onDrop={(e) => level === 0 && handleDrop(e, task.id)}
+      >
         <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 hover:shadow-sm transition-shadow">
           <div className="flex items-center gap-3 flex-1">
+            {level === 0 && (
+              <div className="text-gray-400 cursor-grab active:cursor-grabbing select-none">
+                ⋮⋮
+              </div>
+            )}
             {hasSubtasks && (
               <button
                 onClick={() => toggleExpanded(task.id)}
@@ -869,8 +934,8 @@ export default function DigitalGardenApp() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Left Column - Puzzle Illustration and Tip */}
             <div className="space-y-6">
-              {/* Garden Canvas */}
-              <div className={`relative bg-gradient-to-b ${timeTheme.bgGradient} rounded-lg p-6 h-96 overflow-hidden transition-all duration-1000`}>
+            {/* Garden Canvas */}
+            <div className={`relative bg-gradient-to-b ${timeTheme.bgGradient} rounded-lg p-6 h-96 overflow-hidden transition-all duration-1000`}>
 
               
               {/* Sophisticated Background Pattern */}
@@ -977,7 +1042,7 @@ export default function DigitalGardenApp() {
                         />
                         
 
-                      </div>
+                        </div>
                     );
                   })()}
                 </div>
@@ -995,19 +1060,19 @@ export default function DigitalGardenApp() {
                   )}
                 </div>
               </div>
-              </div>
-              
+            </div>
+            
                                {/* Tip Section - Below the puzzle illustration */}
                  <div className="bg-gradient-to-br from-slate-50 to-gray-50 rounded-lg p-3 border border-slate-100/50">
                    <div className="flex items-start gap-2">
                      <span className="text-base text-amber-500">💡</span>
                      <div className="text-xs text-gray-700">
                        <span className="font-semibold">Tip:</span> Complete tasks to reveal puzzle pieces! Each completed task reveals part of your {lofiThumbnail ? 'lofi music backdrop' : 'seasonal garden image'}.
-                     </div>
-                   </div>
-                 </div>
-            </div>
-            
+                </div>
+                </div>
+                </div>
+              </div>
+              
             {/* Right Column - Stats, Puzzle Progress, and Lofi Player */}
             <div className="space-y-4">
               <div className="grid grid-cols-3 gap-3">
@@ -1099,88 +1164,201 @@ export default function DigitalGardenApp() {
         
         {activeTab === 'pomodoro' && (
           <>
-            {/* Pomodoro Timer */}
-            <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-              <h2 className="text-2xl font-semibold text-gray-800 mb-4 text-center">🍅 Pomodoro Garden Timer</h2>
+            {/* Beautiful Pomodoro Timer */}
+            <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl border border-emerald-200/50 p-6 mb-6 hover:shadow-2xl transition-all duration-300">
+              {/* Beautiful Header */}
+              <div className="text-center mb-6">
+                <div className="flex items-center justify-center gap-3 mb-4">
+                  <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
+                    <span className="text-white text-lg">🍅</span>
+                  </div>
+                  <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent tracking-wide">
+                    Pomodoro
+                  </h2>
+                </div>
+                <div className="inline-flex items-center px-4 py-2 rounded-full bg-emerald-600 text-white text-sm font-medium shadow-lg">
+                  <span className="w-2 h-2 bg-white rounded-full mr-2 animate-pulse"></span>
+                  {timerState === 'work' ? 'Deep Focus' : timerState === 'shortBreak' ? 'Quick Recharge' : 'Deep Rest'}
+                </div>
+              </div>
               
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Timer Display */}
+              {/* Beautiful Mode Tabs */}
+              <div className="relative bg-white/50 backdrop-blur-sm rounded-2xl p-2 mb-6 shadow-inner">
+                                                        {[
+                      { key: 'work', label: 'Focus', color: 'bg-emerald-600', shadow: 'shadow-emerald-300/20' },
+                      { key: 'shortBreak', label: 'Break', color: 'bg-blue-600', shadow: 'shadow-blue-300/20' },
+                      { key: 'longBreak', label: 'Rest', color: 'bg-yellow-500', shadow: 'shadow-yellow-300/20' }
+                    ].map(({ key, label, color, shadow }) => (
+                      <button
+                        key={key}
+                        onClick={() => {
+                          if (key === 'work') {
+                            startTimer('work', currentTaskId);
+                          } else if (key === 'shortBreak') {
+                            startTimer('shortBreak');
+                          } else {
+                            startTimer('longBreak');
+                          }
+                        }}
+                        className={`relative flex-1 py-3 px-4 rounded-xl text-sm font-semibold transition-all duration-300 ${
+                          timerState === key 
+                            ? `${color} text-white ${shadow} shadow-lg transform scale-105` 
+                            : 'text-gray-600 hover:text-gray-800 hover:bg-white/50'
+                        }`}
+                        style={{ width: '33.333%', display: 'inline-block' }}
+                      >
+                        {label}
+                        {timerState === key && (
+                          <div className="absolute inset-0 bg-white/20 rounded-xl"></div>
+                        )}
+                      </button>
+                    ))}
+              </div>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Beautiful Timer Display */}
                 <div className="text-center">
-                  <div className={`inline-flex items-center justify-center w-32 h-32 rounded-full bg-gradient-to-br ${timerState === 'work' ? 'from-emerald-500 to-emerald-600' : timerState === 'shortBreak' ? 'from-blue-400 to-blue-500' : timerState === 'longBreak' ? 'from-blue-500 to-blue-600' : 'from-gray-400 to-gray-500'} text-white mb-4 transition-all duration-500 shadow-lg`}>
-                    <div className="text-center">
-                      <div className="text-4xl font-bold">{formatTime(timeLeft)}</div>
-                      <div className="text-sm opacity-90">{timerTheme.label}</div>
+                  <div className="relative w-48 h-48 mx-auto mb-6">
+                    {/* Outer glow ring */}
+                    <div className={`absolute inset-0 rounded-full ${timerState === 'work' ? 'bg-emerald-600' : timerState === 'shortBreak' ? 'bg-blue-600' : 'bg-yellow-500'} opacity-20 blur-xl animate-pulse`}></div>
+                    
+                    {/* Progress Circle Background */}
+                    <svg className="w-48 h-48 transform -rotate-90 relative z-10" viewBox="0 0 100 100">
+                      <defs>
+                        <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="currentColor" stopOpacity="0.3" />
+                          <stop offset="100%" stopColor="currentColor" stopOpacity="0.1" />
+                        </linearGradient>
+                        <linearGradient id="activeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#a7f3d0" />
+                          <stop offset="50%" stopColor="#6ee7b7" />
+                          <stop offset="100%" stopColor="#34d399" />
+                        </linearGradient>
+                      </defs>
+                      
+                      {/* Background circle */}
+                      <circle
+                        cx="50"
+                        cy="50"
+                        r="42"
+                        stroke="url(#progressGradient)"
+                        strokeWidth="1.5"
+                        fill="none"
+                        className="text-gray-300"
+                      />
+                      
+                      {/* Progress circle */}
+                      <circle
+                        cx="50"
+                        cy="50"
+                        r="42"
+                        stroke={timerState === 'work' ? 'url(#activeGradient)' : 'currentColor'}
+                        strokeWidth="3"
+                        fill="none"
+                        strokeDasharray={`${2 * Math.PI * 42}`}
+                        strokeDashoffset={`${2 * Math.PI * 42 * (1 - 0)}`}
+                        strokeLinecap="round"
+                        className={`transition-all duration-1000 ${timerState === 'work' ? 'text-emerald-400' : timerState === 'shortBreak' ? 'text-blue-400' : 'text-amber-400'}`}
+                      />
+                      
+                      {/* Inner decorative circle */}
+                      <circle
+                        cx="50"
+                        cy="50"
+                        r="35"
+                        stroke="currentColor"
+                        strokeWidth="0.5"
+                        fill="none"
+                        className="text-gray-200 opacity-30"
+                        strokeDasharray="2,2"
+                      />
+                    </svg>
+                    
+                    {/* Time Text */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <span className="text-5xl font-mono font-bold bg-gradient-to-b from-gray-800 to-gray-600 bg-clip-text text-transparent mb-2 tracking-tight">
+                        {formatTime(timeLeft)}
+                      </span>
+                      <div className={`w-16 h-1 ${timerState === 'work' ? 'bg-emerald-600' : timerState === 'shortBreak' ? 'bg-blue-600' : 'bg-yellow-500'} rounded-full opacity-60`}></div>
                     </div>
+
+                                          {/* Pulse effect when active */}
+                      {isRunning && (
+                        <div className={`absolute inset-8 rounded-full ${timerState === 'work' ? 'bg-emerald-600' : timerState === 'shortBreak' ? 'bg-blue-600' : 'bg-yellow-500'} opacity-5 animate-ping`}></div>
+                      )}
                   </div>
                   
-                  <div className="mb-4">
-                    <p className="text-gray-600">{timerTheme.description}</p>
+                  <div className="mb-6">
+                    <p className="text-emerald-700 font-medium">{timerTheme.description}</p>
                     {currentTaskId && timerState === 'work' && (
-                      <p className="text-sm text-emerald-600 mt-1">
-                        💡 <strong>Tip:</strong> Click different tasks to switch focus - timer keeps running!
+                      <p className="text-sm text-emerald-600 mt-2 bg-emerald-50 px-3 py-2 rounded-lg border border-emerald-200">
+                        💡 <strong>Pro Tip:</strong> Switch tasks anytime - timer keeps running!
                       </p>
                     )}
                   </div>
                   
-                  {/* Timer Controls */}
-                  <div className="flex justify-center gap-3 mb-4">
-                    {!isRunning ? (
+                  {/* Beautiful Timer Controls */}
+                  <div className="flex justify-center items-center space-x-6 mb-6">
                       <button
-                        onClick={() => startTimer('work', currentTaskId)}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+                      onClick={resetTimer}
+                      className="group relative flex items-center justify-center w-14 h-14 rounded-2xl bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300"
                       >
-                        {timerState === 'idle' ? 'Start Work' : 'Resume'}
+                      <span className="text-gray-600 group-hover:text-gray-800 transition-colors text-xl">🔄</span>
+                      <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-gray-100/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                       </button>
-                    ) : (
-                      <button
-                        onClick={pauseTimer}
-                        className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-                      >
-                        Pause
-                      </button>
-                    )}
                     
                     <button
-                      onClick={resetTimer}
-                      className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                      onClick={() => !isRunning ? startTimer('work', currentTaskId) : pauseTimer()}
+                      className={`group relative flex items-center justify-center w-20 h-20 rounded-3xl ${timerState === 'work' ? 'bg-emerald-600' : timerState === 'shortBreak' ? 'bg-blue-600' : 'bg-yellow-500'} text-white shadow-2xl hover:shadow-3xl transform hover:scale-110 transition-all duration-300 active:scale-95`}
                     >
-                      Reset
+                      {isRunning ? <span className="text-2xl">⏸️</span> : <span className="text-2xl ml-1">▶️</span>}
+                      <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                      <div className="absolute -inset-1 rounded-3xl bg-gradient-to-r from-white/30 to-transparent opacity-0 group-active:opacity-100 transition-opacity blur-sm"></div>
+                    </button>
+                  
+                    <button
+                      onClick={() => startTimer('shortBreak')}
+                      className="group relative flex items-center justify-center w-14 h-14 rounded-2xl bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300"
+                    >
+                      <span className="text-gray-600 group-hover:text-gray-800 transition-colors text-xl">☕</span>
+                      <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-gray-100/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     </button>
                   </div>
                   
-                  {/* Quick Start Buttons */}
-                  <div className="flex justify-center gap-2">
-                    <button
-                      onClick={() => startTimer('shortBreak')}
-                      className="bg-blue-400 hover:bg-blue-500 text-white px-3 py-1 rounded text-sm transition-colors"
-                    >
-                      Short Break
-                    </button>
-                    <button
-                      onClick={() => startTimer('longBreak')}
-                      className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm transition-colors"
-                    >
-                      Long Break
-                    </button>
+                  {/* Beautiful Timer Statistics */}
+                  <div className="grid grid-cols-2 gap-3 mb-6">
+                    <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-xl p-3 text-center border border-emerald-200/50 shadow-sm hover:shadow-md transition-all duration-300 transform hover:scale-105">
+                      <div className="text-2xl font-bold text-emerald-700">{completedPomodoros}</div>
+                      <div className="text-xs text-emerald-800 font-semibold">Pomodoros</div>
+                    </div>
+                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-3 text-center border border-blue-200/50 shadow-sm hover:shadow-md transition-all duration-300 transform hover:scale-105">
+                      <div className="text-2xl font-bold text-blue-700">{completedSessions}</div>
+                      <div className="text-xs text-blue-800 font-semibold">Sessions</div>
+                    </div>
                   </div>
                 </div>
                 
-                {/* Timer Stats & Task Selection */}
-                <div className="space-y-4">
-                  {/* Current Task */}
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <h3 className="font-semibold text-gray-800 mb-2">🎯 Current Task</h3>
+                {/* Compact Modern Timer Stats & Task Selection */}
+                <div className="space-y-3">
+                  {/* Vibrant Current Task */}
+                  <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-xl p-3 border border-emerald-200/50 shadow-sm hover:shadow-md transition-all duration-300">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-6 h-6 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center">
+                        <span className="text-white text-xs">🎯</span>
+                      </div>
+                      <h3 className="font-bold text-emerald-800 text-xs tracking-wide">CURRENT TASK</h3>
+                    </div>
                     {currentTaskId ? (
-                      <div className="space-y-2">
+                      <div className="space-y-1">
                         {/* Find and display the current task */}
                         {(() => {
                           // First check if it's a main task
                           const mainTask = tasks.find(t => t.id === currentTaskId);
                           if (mainTask) {
                             return (
-                              <div className="flex items-center justify-between">
-                                <span className="text-gray-700">📋 {mainTask.title}</span>
-                                <span className="text-sm text-emerald-700">
+                              <div className="flex items-center justify-between bg-white/80 rounded-lg p-2 border border-emerald-200/50">
+                                <span className="text-gray-800 text-sm font-medium">📋 {mainTask.title}</span>
+                                <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full font-semibold">
                                   {mainTask.pomodoros || 0} 🍅
                                 </span>
                               </div>
@@ -1192,11 +1370,11 @@ export default function DigitalGardenApp() {
                             const subtask = task.subtasks.find(st => st.id === currentTaskId);
                             if (subtask) {
                               return (
-                                <div className="space-y-1">
-                                  <div className="text-xs text-gray-500">{task.title}</div>
+                                <div className="space-y-1 bg-white/80 rounded-lg p-2 border border-emerald-200/50">
+                                  <div className="text-xs text-gray-500 font-medium">{task.title}</div>
                                   <div className="flex items-center justify-between">
-                                    <span className="text-gray-700">└ {subtask.title}</span>
-                                    <span className="text-sm text-emerald-700">
+                                    <span className="text-gray-800 text-sm font-medium">└ {subtask.title}</span>
+                                    <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full font-semibold">
                                       {subtask.pomodoros || 0} 🍅
                                     </span>
                                   </div>
@@ -1206,44 +1384,51 @@ export default function DigitalGardenApp() {
                           }
                           
                           return (
-                            <div className="flex items-center justify-between">
-                              <span className="text-gray-700">Unknown Task</span>
-                              <span className="text-sm text-emerald-600">0 🍅</span>
+                            <div className="flex items-center justify-between bg-white/80 rounded-lg p-2 border border-gray-200/50">
+                              <span className="text-gray-600 text-sm">Unknown Task</span>
+                              <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">0 🍅</span>
                             </div>
                           );
                         })()}
                       </div>
                     ) : (
-                      <p className="text-gray-500 text-sm">No task selected</p>
+                      <div className="bg-white/80 rounded-lg p-2 border border-gray-200/50 text-center">
+                        <p className="text-gray-500 text-xs font-medium">No task selected</p>
+                      </div>
                     )}
                   </div>
                   
-                  {/* Task Selection */}
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <h3 className="font-semibold text-gray-800 mb-2">📝 Select Task to Work On</h3>
-                    <div className="space-y-2 max-h-32 overflow-y-auto">
+                  {/* Vibrant Task Selection */}
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-3 border border-blue-200/50 shadow-sm hover:shadow-md transition-all duration-300">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                        <span className="text-white text-xs">📝</span>
+                      </div>
+                      <h3 className="font-bold text-blue-800 text-xs tracking-wide">SELECT TASK</h3>
+                    </div>
+                    <div className="space-y-1 max-h-24 overflow-y-auto">
                       {/* Main Tasks */}
                       {tasks.filter(task => task.status !== 'done').map(task => (
                         <div key={task.id} className="space-y-1">
                           <div className="flex items-center gap-2">
                             <button
                               onClick={() => startTimer('work', task.id)}
-                              className={`flex-1 text-left p-2 rounded text-sm transition-colors ${
+                              className={`flex-1 text-left p-1.5 rounded-lg text-xs transition-all duration-300 ${
                                 currentTaskId === task.id 
-                                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' 
-                                  : 'bg-white hover:bg-gray-100 text-gray-700'
+                                  ? 'bg-emerald-100 text-emerald-800 border-2 border-emerald-300 shadow-sm' 
+                                  : 'bg-white hover:bg-gray-100 text-gray-700 border border-gray-200 hover:border-emerald-300'
                               }`}
                             >
                               <div className="flex items-center justify-between">
-                                <span className="truncate">📋 {task.title}</span>
-                                <span className="text-emerald-700 text-xs">
+                                <span className="truncate font-medium">📋 {task.title}</span>
+                                <span className="text-xs bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded-full font-semibold">
                                   {task.pomodoros || 0} 🍅
                                 </span>
                               </div>
                             </button>
                             <button
                               onClick={() => completeTaskFromPomodoro(task.id)}
-                              className="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs transition-colors"
+                              className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white px-2 py-1.5 rounded-lg text-xs font-semibold transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg"
                               title="Mark as complete"
                             >
                               ✓
@@ -1252,25 +1437,25 @@ export default function DigitalGardenApp() {
                           
                           {/* Subtasks */}
                           {task.subtasks.filter(subtask => subtask.status !== 'done').map(subtask => (
-                            <div key={subtask.id} className="flex items-center gap-2 ml-4">
+                            <div key={subtask.id} className="flex items-center gap-2 ml-3">
                               <button
                                 onClick={() => startTimer('work', subtask.id)}
-                                className={`flex-1 text-left p-2 rounded text-sm transition-colors ${
+                                className={`flex-1 text-left p-1.5 rounded-lg text-xs transition-all duration-300 ${
                                   currentTaskId === subtask.id 
-                                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' 
-                                    : 'bg-gray-50 hover:bg-gray-100 text-gray-600'
+                                    ? 'bg-emerald-100 text-emerald-800 border-2 border-emerald-300 shadow-sm' 
+                                    : 'bg-gray-50 hover:bg-gray-100 text-gray-600 border border-gray-200 hover:border-emerald-300'
                                 }`}
                               >
                                 <div className="flex items-center justify-between">
-                                  <span className="truncate">└ {subtask.title}</span>
-                                  <span className="text-emerald-700 text-xs">
+                                  <span className="text-gray-800 text-xs font-medium">└ {subtask.title}</span>
+                                  <span className="text-xs bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded-full font-semibold">
                                     {subtask.pomodoros || 0} 🍅
                                   </span>
                                 </div>
                               </button>
                               <button
                                 onClick={() => completeTaskFromPomodoro(subtask.id)}
-                                className="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs transition-colors"
+                                className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white px-2 py-1.5 rounded-lg text-xs font-semibold transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg"
                                 title="Mark as complete"
                               >
                                 ✓
@@ -1280,25 +1465,17 @@ export default function DigitalGardenApp() {
                         </div>
                       ))}
                       {tasks.filter(task => task.status !== 'done').length === 0 && (
-                        <p className="text-gray-500 text-sm">No tasks available</p>
+                        <div className="bg-white/80 rounded-lg p-2 border border-gray-200/50 text-center">
+                          <p className="text-gray-500 text-xs font-medium">No tasks available</p>
+                        </div>
                       )}
                     </div>
                   </div>
                   
-                  {/* Timer Statistics */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-emerald-100 rounded-lg p-3 text-center">
-                      <div className="text-2xl font-bold text-emerald-700">{completedPomodoros}</div>
-                      <div className="text-sm text-emerald-800">Pomodoros</div>
-                    </div>
-                    <div className="bg-blue-100 rounded-lg p-3 text-center">
-                      <div className="text-2xl font-bold text-blue-600">{completedSessions}</div>
-                      <div className="text-sm text-blue-700">Sessions</div>
-                    </div>
-                  </div>
+
                   
-                  {/* Clear Data Button */}
-                  <div className="text-center mt-4">
+                  {/* Vibrant Clear Data Button */}
+                  <div className="text-center">
                     <button
                       onClick={() => {
                         if (window.confirm('Are you sure you want to clear all data? This cannot be undone.')) {
@@ -1306,32 +1483,37 @@ export default function DigitalGardenApp() {
                           window.location.reload();
                         }
                       }}
-                      className="bg-rose-400 hover:bg-rose-500 text-white px-4 py-2 rounded-lg text-sm transition-colors"
+                      className="bg-rose-400 hover:bg-rose-500 text-white px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg"
                       title="Clear all data and start fresh"
                     >
                       🗑️ Clear All Data
                     </button>
                   </div>
                   
-                  {/* Sound Controls */}
-                  <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-                    <h4 className="font-medium text-gray-700 mb-2 text-center">🔊 Sound Settings</h4>
+                  {/* Vibrant Sound Controls */}
+                  <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-xl p-3 border border-emerald-200/50 shadow-sm hover:shadow-md transition-all duration-300">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-6 h-6 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center">
+                        <span className="text-white text-xs">🔊</span>
+                      </div>
+                      <h4 className="font-bold text-emerald-800 text-xs tracking-wide">SOUND SETTINGS</h4>
+                    </div>
                     <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">Sounds</span>
+                      <div className="flex items-center justify-between bg-white/80 rounded-lg p-2 border border-gray-200/50">
+                        <span className="text-xs text-gray-700 font-medium">Sounds</span>
                         <button
                           onClick={() => setSoundsEnabled(!soundsEnabled)}
-                          className={`px-3 py-1 rounded text-xs transition-colors ${
+                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-300 ${
                             soundsEnabled 
-                              ? 'bg-emerald-500 text-white' 
-                              : 'bg-gray-300 text-gray-600'
+                              ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-md' 
+                              : 'bg-gradient-to-r from-gray-400 to-gray-500 text-white shadow-md'
                           }`}
                         >
                           {soundsEnabled ? 'ON' : 'OFF'}
                         </button>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-600">Volume</span>
+                      <div className="flex items-center gap-2 bg-white/80 rounded-lg p-2 border border-gray-200/50">
+                        <span className="text-xs text-gray-700 font-medium">Volume</span>
                         <input
                           type="range"
                           min="0"
@@ -1339,9 +1521,12 @@ export default function DigitalGardenApp() {
                           step="0.1"
                           value={volume}
                           onChange={(e) => setVolume(parseFloat(e.target.value))}
-                          className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                          className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer hover:bg-emerald-100 transition-colors"
+                          style={{
+                            background: `linear-gradient(to right, #10b981 0%, #10b981 ${volume * 100}%, #e5e7eb ${volume * 100}%, #e5e7eb 100%)`
+                          }}
                         />
-                        <span className="text-xs text-gray-500 w-8">{Math.round(volume * 100)}%</span>
+                        <span className="text-xs text-gray-600 w-10 font-semibold">{Math.round(volume * 100)}%</span>
                       </div>
                     </div>
                   </div>
@@ -1379,7 +1564,7 @@ export default function DigitalGardenApp() {
                     title="Clear all tasks and reset puzzle progress"
                   >
                     🗑️ Clear All Data
-                  </button>
+                </button>
                 </div>
               </div>
               
@@ -1402,7 +1587,8 @@ export default function DigitalGardenApp() {
         <div className="mt-6 text-center text-sm text-gray-600">
           <p>💡 <strong>Tips:</strong> Click on a task title to edit it, click the checkbox to mark as complete/incomplete</p>
           <p className="mt-1">🌿 <strong>Subtasks:</strong> Use the +⊂ button to add nested tasks, click ▼/▶ to expand/collapse</p>
-                          <p className="mt-1">🧩 <strong>Puzzle:</strong> Complete tasks to reveal seasonal garden images - each completion reveals a new puzzle piece!</p>
+          <p className="mt-1">🧩 <strong>Puzzle:</strong> Complete tasks to reveal seasonal garden images - each completion reveals a new puzzle piece!</p>
+          <p className="mt-1">📱 <strong>Drag & Drop:</strong> Drag main tasks by the ⋮⋮ handle to reorder them by priority!</p>
         </div>
       </div>
       

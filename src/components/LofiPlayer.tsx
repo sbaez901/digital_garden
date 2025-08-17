@@ -145,7 +145,7 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
       {/* Ultra-Compact Header */}
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <div className="w-9 h-9 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-lg flex items-center justify-center shadow-sm">
+          <div className="w-9 h-9 bg-yellow-400 rounded-lg flex items-center justify-center shadow-sm">
             <span className="text-white text-sm">🎧</span>
           </div>
           <div>
