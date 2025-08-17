@@ -67,7 +67,7 @@ export default function ReactPuzzle({
   if (!isInitialized || !imageSrc) {
     return (
       <div className="w-full h-full flex items-center justify-center">
-        <div className="text-emerald-600 text-lg">🧩 Loading Puzzle...</div>
+        <div className="text-emerald-600 dark:text-emerald-400 text-lg transition-colors duration-300">🧩 Loading Puzzle...</div>
       </div>
     );
   }
@@ -84,7 +84,7 @@ export default function ReactPuzzle({
       
       {/* Background overlay to hide unrevealed pieces */}
       <div 
-        className="absolute inset-0 bg-gradient-to-br from-emerald-100 to-green-200 rounded-lg"
+        className="absolute inset-0 bg-gradient-to-br from-emerald-100 to-green-200 dark:from-emerald-900/50 dark:to-green-900/50 rounded-lg transition-colors duration-300"
         style={{ zIndex: 15 }}
       />
       
@@ -131,7 +131,7 @@ export default function ReactPuzzle({
       
       {/* Grid overlay to make it look like puzzle pieces */}
       <div 
-        className="absolute inset-0"
+        className="absolute inset-0 transition-colors duration-300"
         style={{
           backgroundImage: `
             linear-gradient(to right, rgba(0,0,0,0.2) 2px, transparent 2px),

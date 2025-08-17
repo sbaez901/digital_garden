@@ -26,9 +26,28 @@ export default function DigitalGardenApp() {
   const [isLoadingTasks, setIsLoadingTasks] = useState(false);
   const [tasks, setTasks] = useState<Task[]>([]);
   
+  // Dark/Light mode state
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const saved = localStorage.getItem('darkMode');
+    return saved ? JSON.parse(saved) : false;
+  });
+  
   // Drag and drop state
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
   const [dragOverTaskId, setDragOverTaskId] = useState<string | null>(null);
+
+  // Dark mode effect
+  useEffect(() => {
+    localStorage.setItem('darkMode', JSON.stringify(isDarkMode));
+    console.log('🌙 Dark mode changed:', isDarkMode);
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+      console.log('✅ Added dark class to document');
+    } else {
+      document.documentElement.classList.remove('dark');
+      console.log('✅ Removed dark class from document');
+    }
+  }, [isDarkMode]);
 
   // Preload Firebase modules for faster performance
   useEffect(() => {
@@ -144,7 +163,7 @@ export default function DigitalGardenApp() {
   const [completedSessions, setCompletedSessions] = useState(0);
   
   // Tab Interface State
-  const [activeTab, setActiveTab] = useState<'pomodoro' | 'tasks'>('tasks');
+  const [activeTab, setActiveTab] = useState<'pomodoro' | 'tasks'>('pomodoro');
 
   // Puzzle Garden System
   const [currentSeason, setCurrentSeason] = useState<'spring' | 'summer' | 'autumn' | 'winter'>('spring');
@@ -754,16 +773,16 @@ export default function DigitalGardenApp() {
     return (
       <div 
         key={task.id} 
-        className={`${level > 0 ? 'ml-6 border-l-2 border-emerald-200 pl-4' : ''} ${
+        className={`${level > 0 ? 'ml-6 border-l-2 border-emerald-200 dark:border-emerald-700 pl-4' : ''} ${
           draggedTaskId === task.id ? 'opacity-50' : ''
-        } ${dragOverTaskId === task.id ? 'border-2 border-dashed border-emerald-400 bg-emerald-50' : ''}`}
+        } ${dragOverTaskId === task.id ? 'border-2 border-dashed border-emerald-400 bg-emerald-50 dark:bg-emerald-900/50' : ''}`}
         draggable={level === 0} // Only main tasks are draggable
         onDragStart={(e) => level === 0 && handleDragStart(e, task.id)}
         onDragOver={(e) => level === 0 && handleDragOver(e, task.id)}
         onDragLeave={handleDragLeave}
         onDrop={(e) => level === 0 && handleDrop(e, task.id)}
       >
-        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 hover:shadow-sm transition-shadow">
+        <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 hover:shadow-sm transition-shadow opacity-100 filter-none">
           <div className="flex items-center gap-3 flex-1">
             {level === 0 && (
               <div className="text-gray-400 cursor-grab active:cursor-grabbing select-none">
@@ -791,7 +810,7 @@ export default function DigitalGardenApp() {
               />
             ) : (
               <span 
-                className="text-gray-800 font-medium cursor-pointer hover:text-emerald-700"
+                className="text-gray-800 dark:text-gray-200 font-medium cursor-pointer hover:text-emerald-700 dark:hover:text-emerald-400"
                 onClick={() => level === 0 ? startEditing(task) : startEditingSubtask(task, parentId!)}
               >
                 {task.title}
@@ -799,14 +818,14 @@ export default function DigitalGardenApp() {
             )}
             
             {hasSubtasks && (
-              <span className="text-xs text-emerald-600 bg-emerald-100 px-2 py-1 rounded-full">
+              <span className="text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/50 px-2 py-1 rounded-full">
                 {task.subtasks.length} subtask{task.subtasks.length !== 1 ? 's' : ''}
               </span>
             )}
             
             {/* Pomodoro Count */}
             {task.pomodoros && task.pomodoros > 0 && (
-              <span className="text-xs text-emerald-600 bg-emerald-100 px-2 py-1 rounded-full">
+              <span className="text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/50 px-2 py-1 rounded-full">
                 {task.pomodoros} 🍅
               </span>
             )}
@@ -832,7 +851,7 @@ export default function DigitalGardenApp() {
             {level === 0 && (
               <button
                 onClick={() => addSubtask(task.id)}
-                className="text-emerald-600 hover:text-emerald-800 px-2 py-1 rounded hover:bg-emerald-50 transition-colors"
+                className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 px-2 py-1 rounded hover:bg-emerald-50 dark:hover:bg-emerald-900/50 transition-colors"
                 title="Add subtask"
               >
                 +⊂
@@ -841,7 +860,7 @@ export default function DigitalGardenApp() {
             
             <button
               onClick={() => deleteTask(task.id, parentId)}
-              className="text-red-500 hover:text-red-700 px-2 py-1 rounded hover:bg-red-50 transition-colors"
+              className="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 px-2 py-1 rounded hover:bg-red-50 dark:hover:bg-red-900/50 transition-colors"
             >
               ×
             </button>
@@ -903,104 +922,189 @@ export default function DigitalGardenApp() {
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-zinc-50 p-8">
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-4xl font-bold text-emerald-800 mb-8 text-center">
-          🌱 Task Garden
-        </h1>
-        
-                  {/* Header with User Management */}
-          <div className="flex justify-between items-center mb-6">
-            <div className="text-sm text-gray-600">
-              <div className="text-gray-500">
-                {currentUser ? `Welcome back, ${currentUser.email}! 🌱` : "Welcome to Task Garden! 🌱"}
-              </div>
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-zinc-50 dark:from-gray-900 dark:to-gray-800 p-4 transition-colors duration-300 relative overflow-hidden">
+      {/* Subtle Floating Particles */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-16 left-16 w-1 h-1 bg-emerald-300/20 dark:bg-emerald-400/15 rounded-full animate-pulse"></div>
+        <div className="absolute top-32 right-24 w-0.5 h-0.5 bg-green-300/25 dark:bg-green-400/20 rounded-full animate-pulse" style={{animationDelay: '1s'}}></div>
+        <div className="absolute bottom-32 left-24 w-1 h-1 bg-teal-300/20 dark:bg-teal-400/15 rounded-full animate-pulse" style={{animationDelay: '2s'}}></div>
+      </div>
+      
+      <div className="max-w-5xl mx-auto relative z-10">
+        {/* Ultra-Modern Compact Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg">
+              <span className="text-white text-lg">🌱</span>
             </div>
             <div>
-              {currentUser ? (
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2 bg-emerald-50 px-3 py-2 rounded-lg border border-emerald-200">
-                    <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
-                    <span className="text-sm text-emerald-700 font-medium">
-                      {currentUser.email}
-                    </span>
-                    {isLoadingTasks && (
-                      <div className="flex items-center gap-1 text-xs text-emerald-600">
-                        <svg className="animate-spin w-3 h-3" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Loading...
-                      </div>
-                    )}
-                  </div>
-                  <button 
-                    onClick={handleLogout}
-                    className="flex items-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 border border-red-200 hover:border-red-300 hover:shadow-sm"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400 bg-clip-text text-transparent">
+                Task Garden
+              </h1>
+              <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                Cultivate productivity, watch achievements bloom
+              </p>
+            </div>
+          </div>
+          
+          {/* Modern Action Buttons */}
+          <div className="flex items-center gap-3">
+            {/* User Status Indicator */}
+            {currentUser && (
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-900/30 rounded-lg border border-emerald-200/50 dark:border-emerald-700/50">
+                <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+                <span className="text-xs text-emerald-700 dark:text-emerald-300 font-medium">
+                  {currentUser.email}
+                </span>
+                {isLoadingTasks && (
+                  <div className="flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
+                    <svg className="animate-spin w-3 h-3" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    Sign Out
-                  </button>
-                </div>
+                    Loading...
+                  </div>
+                )}
+              </div>
+            )}
+            
+            <button
+              onClick={() => {
+                console.log('🔄 Toggle clicked! Current dark mode:', isDarkMode);
+                setIsDarkMode(!isDarkMode);
+              }}
+              className="p-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 rounded-lg transition-all duration-200 hover:scale-105"
+              title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            >
+              {isDarkMode ? (
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" />
+                </svg>
               ) : (
-                <button 
-                  onClick={() => setShowAuth(true)}
-                  className="flex items-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 border border-emerald-200 hover:border-emerald-300 hover:shadow-sm"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-                  </svg>
-                  Sign In
-                </button>
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                </svg>
               )}
-            </div>
+            </button>
+            
+            {!currentUser ? (
+              <button
+                onClick={() => setShowAuth(true)}
+                className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-sm font-medium rounded-lg hover:from-emerald-600 hover:to-teal-700 transition-all duration-200 hover:scale-105 shadow-md"
+              >
+                Sign In
+              </button>
+            ) : (
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 bg-gradient-to-r from-gray-500 to-gray-600 text-white text-sm font-medium rounded-lg hover:from-gray-600 hover:to-gray-700 transition-all duration-200 hover:scale-105 shadow-md"
+              >
+                Sign Out
+              </button>
+            )}
           </div>
+        </div>
         
-        {/* Garden Visualization - Always Visible */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-          <h2 className="text-2xl font-semibold text-gray-800 mb-4 text-center">🌿 Your Growing Garden</h2>
+
+        
+        {/* Ultra-Compact Garden Section */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md dark:shadow-gray-900/50 p-3 mb-4 transition-all duration-300 border border-gray-100/50 dark:border-gray-700/50">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 bg-gradient-to-br from-green-400 to-emerald-500 rounded flex items-center justify-center shadow-sm">
+                <span className="text-white text-xs">🌿</span>
+              </div>
+              <h2 className="text-base font-semibold bg-gradient-to-r from-green-600 to-emerald-600 dark:from-green-400 dark:to-emerald-400 bg-clip-text text-transparent">
+                Your Growing Garden
+              </h2>
+            </div>
+            <p className="text-gray-500 dark:text-gray-400 text-xs">
+              Watch your productivity flourish
+            </p>
+          </div>
           
-          {/* Season Selector */}
+          {/* Enhanced Season Selector */}
           <div className="flex justify-center mb-4">
-            <div className="flex space-x-2 bg-gray-100 rounded-lg p-1">
-              {(['spring', 'summer', 'autumn', 'winter'] as const).map((season) => (
-                <button
-                  key={season}
-                  onClick={() => {
-                    setCurrentSeason(season);
-                    setRevealedPieces(0); // Reset puzzle for new season
-                  }}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                    currentSeason === season
-                      ? 'bg-white text-gray-800 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-800'
-                  }`}
-                >
-                  <span className="mr-2">
-                    {season === 'spring' ? '🌸' : 
-                     season === 'summer' ? '🌿' : 
-                     season === 'autumn' ? '🍂' : '❄️'}
-                  </span>
-                  {season.charAt(0).toUpperCase() + season.slice(1)}
-                </button>
-              ))}
+            <div className="bg-gradient-to-r from-emerald-50 to-blue-50 dark:from-emerald-900/30 dark:to-blue-900/30 rounded-xl p-2 border border-emerald-200/50 dark:border-emerald-700/50 shadow-md">
+              <div className="flex space-x-1">
+                {(['spring', 'summer', 'autumn', 'winter'] as const).map((season) => (
+                  <button
+                    key={season}
+                    onClick={() => {
+                      setCurrentSeason(season);
+                      setRevealedPieces(0); // Reset puzzle for new season
+                    }}
+                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300 ${
+                      currentSeason === season
+                        ? 'bg-white dark:bg-gray-600 text-gray-800 dark:text-gray-100 shadow-md transform scale-105'
+                        : 'text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 hover:bg-white/50 dark:hover:bg-gray-600/50'
+                    }`}
+                  >
+                    <span className="mr-2 text-base">
+                      {season === 'spring' ? '🌸' : 
+                       season === 'summer' ? '🌿' : 
+                       season === 'autumn' ? '🍂' : '❄️'}
+                    </span>
+                    {season.charAt(0).toUpperCase() + season.slice(1)}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
           
-          {/* Time-based Welcome Message */}
-          <div className="text-center mb-4">
-            <p className={`text-sm ${timeTheme.textColor} font-medium`}>
+          {/* Compact Time-based Welcome Message */}
+          <div className="text-center mb-2">
+            <p className={`text-xs ${timeTheme.textColor} font-medium`}>
               {timeTheme.message}
             </p>
           </div>
           
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Left Column - Puzzle Illustration and Tip */}
-            <div className="space-y-6">
+          {/* Compact Garden Statistics Dashboard */}
+          <div className="mb-3 p-2 bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-900/30 dark:to-green-900/30 rounded-md border border-emerald-200/50 dark:border-emerald-700/50">
+            <h3 className="text-sm font-semibold text-emerald-800 dark:text-emerald-200 mb-1.5 text-center flex items-center justify-center gap-1">
+              <span className="text-sm">📊</span>
+              Garden Growth
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-1">
+              {/* Total Tasks Completed */}
+              <div className="text-center p-1.5 bg-white/80 dark:bg-gray-700/80 rounded border border-emerald-200/50 dark:border-emerald-600/50">
+                <div className="text-sm font-bold text-emerald-700 dark:text-emerald-300">
+                  {tasks.filter(task => task.status === 'done').length}
+                </div>
+                <div className="text-xs text-emerald-600 dark:text-emerald-400">Tasks</div>
+              </div>
+              
+              {/* Total Subtasks Completed */}
+              <div className="text-center p-1.5 bg-white/80 dark:bg-gray-700/80 rounded border border-blue-200/50 dark:border-blue-600/50">
+                <div className="text-sm font-bold text-blue-700 dark:text-blue-300">
+                  {tasks.reduce((total, task) => total + task.subtasks.filter(st => st.status === 'done').length, 0)}
+                </div>
+                <div className="text-xs text-blue-600 dark:text-blue-400">Subtasks</div>
+              </div>
+              
+              {/* Total Pomodoros */}
+              <div className="text-center p-1.5 bg-white/80 dark:bg-gray-700/80 rounded border border-amber-200/50 dark:border-amber-600/50">
+                <div className="text-sm font-bold text-amber-700 dark:text-amber-300">
+                  {tasks.reduce((total, task) => total + (task.pomodoros || 0), 0)}
+                </div>
+                <div className="text-xs text-amber-600 dark:text-amber-400">Pomodoros</div>
+              </div>
+              
+              {/* Current Streak */}
+              <div className="text-center p-1.5 bg-white/80 dark:bg-gray-700/80 rounded border border-purple-200/50 dark:border-purple-600/50">
+                <div className="text-sm font-bold text-purple-700 dark:text-purple-300">
+                  {Math.max(...tasks.map(task => task.pomodoros || 0), 0)}
+                </div>
+                <div className="text-xs text-purple-600 dark:text-purple-400">Best Streak</div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left Column - Puzzle Illustration (Bigger) */}
+            <div className="lg:col-span-2 space-y-4">
             {/* Puzzle Canvas - Now handled entirely by ReactPuzzle */}
-            <div className="relative rounded-lg h-96 overflow-hidden bg-white">
+            <div className="relative rounded-xl h-96 overflow-hidden bg-white shadow-lg">
               {/* ReactPuzzle Component - Grid-based puzzle system */}
               {(() => {
                     // Get all available images for the current season
@@ -1095,12 +1199,12 @@ export default function DigitalGardenApp() {
                   })()}
               
               {/* Garden Stats Overlay */}
-              <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg p-4 text-sm shadow-sm">
+              <div className="absolute bottom-4 right-4 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg p-4 text-sm shadow-sm transition-colors duration-300">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-emerald-600">{revealedPieces}/{seasonalGardens[currentSeason].pieces}</div>
-                  <div className="text-gray-600 font-medium">Puzzle Pieces</div>
+                  <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{revealedPieces}/{seasonalGardens[currentSeason].pieces}</div>
+                  <div className="text-gray-600 dark:text-gray-300 font-medium">Puzzle Pieces</div>
                   {revealedPieces === seasonalGardens[currentSeason].pieces && (
-                    <div className="mt-2 text-xs bg-emerald-100 text-emerald-800 px-2 py-1 rounded-full">
+                    <div className="mt-2 text-xs bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-200 px-2 py-1 rounded-full">
                       🎉 Puzzle Complete! 🚀 New puzzle loading...
                     </div>
                   )}
@@ -1109,55 +1213,54 @@ export default function DigitalGardenApp() {
             </div>
             
                                {/* Tip Section - Below the puzzle illustration */}
-                 <div className="bg-gradient-to-br from-slate-50 to-gray-50 rounded-lg p-3 border border-slate-100/50">
+                 <div className="bg-gradient-to-br from-slate-50 to-gray-50 dark:from-slate-800/50 dark:to-gray-800/50 rounded-lg p-3 border border-slate-100/50 dark:border-slate-700/50 transition-colors duration-300">
                    <div className="flex items-start gap-2">
                      <span className="text-base text-amber-500">💡</span>
-                     <div className="text-xs text-gray-700">
+                     <div className="text-xs text-gray-700 dark:text-gray-200">
                        <span className="font-semibold">Tip:</span> Complete tasks to reveal puzzle pieces! Each completed task reveals part of your {lofiThumbnail ? 'lofi music backdrop' : 'seasonal garden image'}.
                 </div>
                 </div>
                 </div>
               </div>
               
-            {/* Right Column - Stats, Puzzle Progress, and Lofi Player */}
-            <div className="space-y-4">
-              <div className="grid grid-cols-3 gap-3">
-                <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-lg p-3 text-center transform hover:scale-105 transition-all duration-300 shadow-sm border border-emerald-100/50">
-                  <div className="text-2xl font-bold text-emerald-700 mb-0.5">{revealedPieces}</div>
-                  <div className="text-xs text-emerald-600 font-medium">Puzzle Pieces</div>
+            {/* Right Column - Compact Stats, Progress, and Music Player */}
+            <div className="space-y-3">
+              <div className="grid grid-cols-3 gap-2">
+                <div className="bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-900/30 dark:to-green-900/30 rounded-lg p-2 text-center transform hover:scale-105 transition-all duration-300 shadow-sm border border-emerald-100/50 dark:border-emerald-700/50">
+                  <div className="text-lg font-bold text-emerald-700 dark:text-emerald-300">{revealedPieces}</div>
+                  <div className="text-xs text-emerald-600 dark:text-emerald-400">Pieces</div>
                 </div>
-                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-3 text-center transform hover:scale-105 transition-all duration-300 shadow-sm border border-blue-100/50">
-                  <div className="text-2xl font-bold text-blue-700 mb-0.5">{seasonalGardens[currentSeason].pieces}</div>
-                  <div className="text-xs text-blue-600 font-medium">Total Pieces</div>
-                  </div>
-                <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-lg p-3 text-center transform hover:scale-105 transition-all duration-300 shadow-sm border border-amber-100/50">
-                  <div className="text-2xl font-bold text-amber-700 mb-0.5">{Math.round((revealedPieces / seasonalGardens[currentSeason].pieces) * 100)}%</div>
-                  <div className="text-xs text-amber-600 font-medium">Complete</div>
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-lg p-2 text-center transform hover:scale-105 transition-all duration-300 shadow-sm border border-blue-100/50 dark:border-blue-700/50">
+                  <div className="text-lg font-bold text-blue-700 dark:text-blue-300">{seasonalGardens[currentSeason].pieces}</div>
+                  <div className="text-xs text-blue-600 dark:text-blue-400">Total</div>
+                </div>
+                <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/30 dark:to-orange-900/30 rounded-lg p-3 text-center transform hover:scale-105 transition-all duration-300 shadow-sm border border-amber-100/50 dark:border-amber-700/50">
+                  <div className="text-2xl font-bold text-amber-700 dark:text-amber-300 mb-0.5">{Math.round((revealedPieces / seasonalGardens[currentSeason].pieces) * 100)}%</div>
+                  <div className="text-xs text-amber-600 dark:text-amber-400 font-medium">Complete</div>
                 </div>
               </div>
               
-              {/* Lofi Backdrop Indicator */}
+              {/* Compact Lofi Backdrop Indicator */}
               {lofiThumbnail && (
-                <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-3 border border-purple-100/50">
+                <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/30 dark:to-pink-900/30 rounded-lg p-2 border border-purple-100/50 dark:border-purple-700/50 transition-colors duration-300">
                   <div className="flex items-center gap-2">
-                    <span className="text-base text-purple-500">🎵</span>
-                    <div className="text-xs text-purple-700">
-                      <span className="font-semibold">Lofi Backdrop:</span> {lofiTrackTitle}
+                    <span className="text-sm text-purple-500">🎵</span>
+                    <div className="text-xs text-purple-700 dark:text-purple-300">
+                      <span className="font-semibold">Lofi:</span> {lofiTrackTitle}
                       {dynamicBackdropMode && (
-                        <span className="ml-2 text-purple-500">✨ Dynamic</span>
+                        <span className="ml-2 text-purple-500 dark:text-purple-400">✨</span>
                       )}
                     </div>
-
                   </div>
                 </div>
               )}
               
-              <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-lg p-3 border border-emerald-100/50">
-                <h3 className="font-semibold text-emerald-800 mb-2 flex items-center gap-2">
-                  <span className="text-base">🧩</span>
+              <div className="bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-900/30 dark:to-green-900/30 rounded-lg p-2 border border-emerald-100/50 dark:border-emerald-700/50 transition-colors duration-300">
+                <h3 className="font-semibold text-emerald-800 dark:text-emerald-200 mb-1.5 flex items-center gap-2">
+                  <span className="text-sm">🧩</span>
                   Puzzle Progress
                 </h3>
-                <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden mb-2">
+                <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2.5 overflow-hidden mb-2">
                   <div 
                     className="bg-gradient-to-r from-emerald-400 to-green-500 h-2.5 rounded-full transition-all duration-1000 relative"
                     style={{ width: `${(revealedPieces / seasonalGardens[currentSeason].pieces) * 100}%` }}
@@ -1166,7 +1269,7 @@ export default function DigitalGardenApp() {
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse"></div>
                   </div>
                 </div>
-                <div className="text-xs text-emerald-700 font-medium">
+                <div className="text-xs text-emerald-700 dark:text-emerald-300 font-medium text-center">
                   {revealedPieces === seasonalGardens[currentSeason].pieces ? '🎉 Puzzle Complete! 🚀 New puzzle loading...' :
                    revealedPieces > seasonalGardens[currentSeason].pieces * 0.7 ? '🌺 Almost there!' :
                    revealedPieces > seasonalGardens[currentSeason].pieces * 0.4 ? '🌿 Great progress!' :
@@ -1182,43 +1285,50 @@ export default function DigitalGardenApp() {
         </div>
         
         {/* Tab Navigation - Only for Pomodoro and Tasks */}
-        <div className="bg-white rounded-lg shadow-lg p-2 mb-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-900/50 p-2 mb-6 transition-colors duration-300">
           <div className="flex space-x-1">
             <button
               onClick={() => setActiveTab('tasks')}
-              className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all duration-200 ${
+              className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all duration-200 relative ${
                 activeTab === 'tasks'
-                  ? 'bg-emerald-600 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-emerald-600 text-white shadow-md transform scale-[1.02] ring-2 ring-emerald-300 dark:ring-emerald-500'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
               }`}
             >
               📝 Task Management
+              {activeTab === 'tasks' && (
+                <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-emerald-300 dark:bg-emerald-500 rounded-full"></div>
+              )}
             </button>
             <button
               onClick={() => setActiveTab('pomodoro')}
-              className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all duration-200 ${
+              className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all duration-200 relative ${
                 activeTab === 'pomodoro'
-                  ? 'bg-emerald-600 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-emerald-600 text-white shadow-md transform scale-[1.02] ring-2 ring-emerald-300 dark:ring-emerald-500'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
               }`}
             >
               🍅 Pomodoro Timer
+              {activeTab === 'pomodoro' && (
+                <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-emerald-300 dark:bg-emerald-500 rounded-full"></div>
+              )}
             </button>
-
           </div>
         </div>
+        
+
         
         {activeTab === 'pomodoro' && (
           <>
             {/* Beautiful Pomodoro Timer */}
-            <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl border border-emerald-200/50 p-6 mb-6 hover:shadow-2xl transition-all duration-300">
+            <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm rounded-2xl shadow-xl dark:shadow-gray-900/50 border border-emerald-200/50 dark:border-emerald-700/50 p-6 mb-6 hover:shadow-2xl transition-all duration-300">
               {/* Beautiful Header */}
               <div className="text-center mb-6">
                 <div className="flex items-center justify-center gap-3 mb-4">
                   <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
                     <span className="text-white text-lg">🍅</span>
                   </div>
-                  <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent tracking-wide">
+                  <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent tracking-wide transition-colors duration-300">
                     Pomodoro
                   </h2>
                 </div>
@@ -1230,11 +1340,11 @@ export default function DigitalGardenApp() {
               
               {/* Mode Tabs will be positioned over the timer on the left side */}
               
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Beautiful Timer Display */}
-                <div className="text-center">
+              <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                {/* Compact Timer Display (2/5 width) */}
+                <div className="lg:col-span-2 text-center">
                   {/* Mode Tabs positioned over timer */}
-                  <div className="relative bg-white/50 backdrop-blur-sm rounded-2xl p-2 mb-4 shadow-inner">
+                  <div className="relative bg-white/80 dark:bg-gray-600/80 backdrop-blur-sm rounded-2xl p-2 mb-4 shadow-inner">
                     {[
                       { key: 'work', label: 'Focus', color: 'bg-emerald-600', shadow: 'shadow-emerald-300/20' },
                       { key: 'shortBreak', label: 'Break', color: 'bg-blue-600', shadow: 'shadow-blue-300/20' },
@@ -1254,7 +1364,7 @@ export default function DigitalGardenApp() {
                         className={`relative flex-1 py-3 px-4 rounded-xl text-sm font-semibold transition-all duration-300 ${
                           timerState === key 
                             ? `${color} text-white ${shadow} shadow-lg transform scale-105` 
-                            : 'text-gray-600 hover:text-gray-800 hover:bg-white/50'
+                            : 'text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 hover:bg-white/70 dark:hover:bg-gray-500/70'
                         }`}
                         style={{ width: '33.333%', display: 'inline-block' }}
                       >
@@ -1266,12 +1376,12 @@ export default function DigitalGardenApp() {
                     ))}
                   </div>
                   
-                  <div className="relative w-48 h-48 mx-auto mb-6">
+                  <div className="relative w-64 h-64 mx-auto mb-6">
                     {/* Outer glow ring */}
                     <div className={`absolute inset-0 rounded-full ${timerState === 'work' ? 'bg-emerald-600' : timerState === 'shortBreak' ? 'bg-blue-600' : 'bg-yellow-500'} opacity-20 blur-xl animate-pulse`}></div>
                     
                     {/* Progress Circle Background */}
-                    <svg className="w-48 h-48 transform -rotate-90 relative z-10" viewBox="0 0 100 100">
+                    <svg className="w-64 h-64 transform -rotate-90 relative z-10" viewBox="0 0 100 100">
                       <defs>
                         <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
                           <stop offset="0%" stopColor="currentColor" stopOpacity="0.3" />
@@ -1324,10 +1434,10 @@ export default function DigitalGardenApp() {
                     
                     {/* Time Text */}
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-5xl font-mono font-bold bg-gradient-to-b from-gray-800 to-gray-600 bg-clip-text text-transparent mb-2 tracking-tight">
+                      <span className="text-7xl font-mono font-bold bg-gradient-to-b from-gray-800 to-gray-600 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent mb-3 tracking-tight">
                         {formatTime(timeLeft)}
                       </span>
-                      <div className={`w-16 h-1 ${timerState === 'work' ? 'bg-emerald-600' : timerState === 'shortBreak' ? 'bg-blue-600' : 'bg-yellow-500'} rounded-full opacity-60`}></div>
+                      <div className={`w-20 h-1.5 ${timerState === 'work' ? 'bg-emerald-600' : timerState === 'shortBreak' ? 'bg-blue-600' : 'bg-yellow-500'} rounded-full opacity-60`}></div>
                     </div>
 
                                           {/* Pulse effect when active */}
@@ -1337,87 +1447,87 @@ export default function DigitalGardenApp() {
                   </div>
                   
                   <div className="mb-6">
-                    <p className="text-emerald-700 font-medium">{timerTheme.description}</p>
+                    <p className="text-emerald-700 dark:text-emerald-300 font-medium">{timerTheme.description}</p>
                     {currentTaskId && timerState === 'work' && (
-                      <p className="text-sm text-emerald-600 mt-2 bg-emerald-50 px-3 py-2 rounded-lg border border-emerald-200">
+                      <p className="text-sm text-emerald-600 dark:text-emerald-400 mt-2 bg-emerald-50 dark:bg-emerald-900/30 px-3 py-2 rounded-lg border border-emerald-200 dark:border-emerald-700">
                         💡 <strong>Pro Tip:</strong> Switch tasks anytime - timer keeps running!
                       </p>
                     )}
                   </div>
                   
                   {/* Beautiful Timer Controls */}
-                  <div className="flex justify-center items-center space-x-6 mb-6">
+                  <div className="flex justify-center items-center space-x-8 mb-6">
                       <button
                       onClick={resetTimer}
-                      className="group relative flex items-center justify-center w-14 h-14 rounded-2xl bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300"
+                      className="group relative flex items-center justify-center w-16 h-16 rounded-2xl bg-white/80 dark:bg-gray-700/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-600/50 shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300"
                       >
-                      <span className="text-gray-600 group-hover:text-gray-800 transition-colors text-xl">🔄</span>
-                      <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-gray-100/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                      <span className="text-gray-600 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-gray-100 transition-colors text-2xl">🔄</span>
+                      <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-gray-100/50 dark:from-gray-600/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                       </button>
                     
                     <button
                       onClick={() => !isRunning ? startTimer('work', currentTaskId) : pauseTimer()}
-                      className={`group relative flex items-center justify-center w-20 h-20 rounded-3xl ${timerState === 'work' ? 'bg-emerald-600' : timerState === 'shortBreak' ? 'bg-blue-600' : 'bg-yellow-500'} text-white shadow-2xl hover:shadow-3xl transform hover:scale-110 transition-all duration-300 active:scale-95`}
+                      className={`group relative flex items-center justify-center w-24 h-24 rounded-3xl ${timerState === 'work' ? 'bg-emerald-600' : timerState === 'shortBreak' ? 'bg-blue-600' : 'bg-yellow-500'} text-white shadow-2xl hover:shadow-3xl transform hover:scale-110 transition-all duration-300 active:scale-95`}
                     >
-                      {isRunning ? <span className="text-2xl">⏸️</span> : <span className="text-2xl ml-1">▶️</span>}
+                      {isRunning ? <span className="text-3xl">⏸️</span> : <span className="text-3xl ml-1">▶️</span>}
                       <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                       <div className="absolute -inset-1 rounded-3xl bg-gradient-to-r from-white/30 to-transparent opacity-0 group-active:opacity-100 transition-opacity blur-sm"></div>
                     </button>
                   
                     <button
                       onClick={() => startTimer('shortBreak')}
-                      className="group relative flex items-center justify-center w-14 h-14 rounded-2xl bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300"
+                      className="group relative flex items-center justify-center w-16 h-16 rounded-2xl bg-white/80 dark:bg-gray-700/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-600/50 shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300"
                     >
-                      <span className="text-gray-600 group-hover:text-gray-800 transition-colors text-xl">☕</span>
-                      <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-gray-100/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                      <span className="text-gray-600 dark:text-gray-300 group-hover:text-gray-800 dark:group-hover:text-gray-100 transition-colors text-2xl">☕</span>
+                      <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-gray-100/50 dark:from-gray-600/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     </button>
                   </div>
                   
-                  {/* Beautiful Timer Statistics */}
-                  <div className="grid grid-cols-2 gap-3 mb-6">
-                    <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-xl p-3 text-center border border-emerald-200/50 shadow-sm hover:shadow-md transition-all duration-300 transform hover:scale-105">
-                      <div className="text-2xl font-bold text-emerald-700">{completedPomodoros}</div>
-                      <div className="text-xs text-emerald-800 font-semibold">Pomodoros</div>
+                  {/* Compact Timer Statistics */}
+                  <div className="grid grid-cols-2 gap-2 mb-4">
+                    <div className="bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-900/30 dark:to-green-900/30 rounded-lg p-2 text-center border border-emerald-200/50 dark:border-emerald-700/50 shadow-sm hover:shadow-md transition-all duration-300 transform hover:scale-105">
+                      <div className="text-lg font-bold text-emerald-700 dark:text-emerald-300">{completedPomodoros}</div>
+                      <div className="text-xs text-emerald-800 dark:text-emerald-200">Pomodoros</div>
                     </div>
-                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-3 text-center border border-blue-200/50 shadow-sm hover:shadow-md transition-all duration-300 transform hover:scale-105">
-                      <div className="text-2xl font-bold text-blue-700">{completedSessions}</div>
-                      <div className="text-xs text-blue-800 font-semibold">Sessions</div>
+                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-lg p-2 text-center border border-blue-200/50 dark:border-blue-700/50 shadow-sm hover:shadow-md transition-all duration-300 transform hover:scale-105">
+                      <div className="text-lg font-bold text-blue-700 dark:text-blue-300">{completedSessions}</div>
+                      <div className="text-xs text-blue-800 dark:text-blue-200">Sessions</div>
                     </div>
                   </div>
                 </div>
                 
-                {/* Compact Modern Timer Stats & Task Selection */}
-                <div className="space-y-3">
-                  {/* Vibrant Current Task - Expanded */}
-                  <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-xl p-4 border border-emerald-200/50 shadow-sm hover:shadow-md transition-all duration-300">
+                {/* Enhanced Timer Stats & Task Selection - Full Width (3/5) */}
+                <div className="lg:col-span-3 space-y-4 w-full">
+                  {/* Enhanced Current Task - Full Width */}
+                  <div className="bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-900/30 dark:to-green-900/30 rounded-lg p-4 border border-emerald-200/50 dark:border-emerald-700/50 shadow-sm hover:shadow-md transition-all duration-300 w-full">
                     <div className="flex items-center gap-2 mb-3">
                       <div className="w-6 h-6 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center">
-                        <span className="text-white text-xs">🎯</span>
+                        <span className="text-white text-sm">🎯</span>
                       </div>
-                      <h3 className="font-bold text-emerald-800 text-sm tracking-wide">CURRENT TASK</h3>
+                      <h3 className="font-bold text-emerald-800 dark:text-emerald-200 text-sm tracking-wide transition-colors duration-300">CURRENT TASK</h3>
                     </div>
                     {currentTaskId ? (
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         {/* Find and display the current task with expanded details */}
                         {(() => {
                           // First check if it's a main task
                           const mainTask = tasks.find(t => t.id === currentTaskId);
                           if (mainTask) {
                             return (
-                              <div className="bg-white/80 rounded-lg p-3 border border-emerald-200/50">
-                                <div className="flex items-center justify-between mb-2">
-                                  <span className="text-gray-800 text-sm font-semibold">📋 {mainTask.title}</span>
-                                  <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full font-semibold">
+                              <div className="bg-white/80 dark:bg-gray-700/80 rounded-lg p-4 border border-emerald-200/50 dark:border-emerald-600/50 transition-colors duration-300">
+                                <div className="flex items-center justify-between mb-3">
+                                  <span className="text-gray-800 dark:text-gray-100 text-base font-semibold transition-colors duration-300">📋 {mainTask.title}</span>
+                                  <span className="text-sm bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 px-3 py-1.5 rounded-full font-semibold transition-colors duration-300">
                                     {mainTask.pomodoros || 0} 🍅
                                   </span>
                                 </div>
-                                <div className="text-xs text-gray-600 mb-2">
-                                  Status: <span className={`font-medium ${mainTask.status === 'done' ? 'text-emerald-600' : 'text-amber-600'}`}>
+                                <div className="text-sm text-gray-600 dark:text-gray-300 mb-2 transition-colors duration-300">
+                                  Status: <span className={`font-medium ${mainTask.status === 'done' ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
                                     {mainTask.status === 'done' ? '✅ Completed' : '⏳ In Progress'}
                                   </span>
                                 </div>
                                 {mainTask.subtasks.length > 0 && (
-                                  <div className="text-xs text-gray-500">
+                                  <div className="text-sm text-gray-500 dark:text-gray-400 transition-colors duration-300">
                                     Subtasks: {mainTask.subtasks.filter(st => st.status === 'done').length}/{mainTask.subtasks.length} completed
                                   </div>
                                 )}
@@ -1430,17 +1540,17 @@ export default function DigitalGardenApp() {
                             const subtask = task.subtasks.find(st => st.id === currentTaskId);
                             if (subtask) {
                               return (
-                                <div className="bg-white/80 rounded-lg p-3 border border-emerald-200/50">
-                                  <div className="text-xs text-gray-500 font-medium mb-2">📁 Parent: {task.title}</div>
-                                  <div className="space-y-2">
+                                <div className="bg-white/80 dark:bg-gray-700/80 rounded-lg p-4 border border-emerald-200/50 dark:border-emerald-600/50 transition-colors duration-300">
+                                  <div className="text-sm text-gray-500 dark:text-gray-400 font-medium mb-3">📁 Parent: {task.title}</div>
+                                  <div className="space-y-3">
                                     <div className="flex items-center justify-between">
-                                      <span className="text-gray-800 text-sm font-semibold">└ {subtask.title}</span>
-                                      <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full font-semibold">
+                                      <span className="text-gray-800 dark:text-gray-100 text-base font-semibold">└ {subtask.title}</span>
+                                      <span className="text-sm bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 px-3 py-1.5 rounded-full font-semibold transition-colors duration-300">
                                         {subtask.pomodoros || 0} 🍅
                                       </span>
                                     </div>
-                                    <div className="text-xs text-gray-600">
-                                      Status: <span className={`font-medium ${subtask.status === 'done' ? 'text-emerald-600' : 'text-amber-600'}`}>
+                                    <div className="text-sm text-gray-600 dark:text-gray-300">
+                                      Status: <span className={`font-medium ${subtask.status === 'done' ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
                                         {subtask.status === 'done' ? '✅ Completed' : '⏳ In Progress'}
                                       </span>
                                     </div>
@@ -1451,52 +1561,54 @@ export default function DigitalGardenApp() {
                           }
                           
                           return (
-                            <div className="bg-white/80 rounded-lg p-3 border border-gray-200/50">
-                              <span className="text-gray-600 text-sm">Unknown Task</span>
-                              <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full ml-2">0 🍅</span>
+                            <div className="bg-white/80 dark:bg-gray-700/80 rounded-lg p-4 border border-gray-200/50 dark:border-gray-600/50 transition-colors duration-300">
+                              <span className="text-gray-600 dark:text-gray-300 text-base">Unknown Task</span>
+                              <span className="text-sm bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-3 py-1.5 rounded-full ml-3">0 🍅</span>
                             </div>
                           );
                         })()}
                       </div>
                     ) : (
-                      <div className="bg-white/80 rounded-lg p-3 border border-gray-200/50 text-center">
-                        <p className="text-gray-500 text-sm font-medium">No task selected</p>
-                        <p className="text-xs text-gray-400 mt-1">Choose a task from the right panel to start your Pomodoro session</p>
+                      <div className="bg-white/80 dark:bg-gray-700/80 rounded-lg p-4 border border-gray-200/50 dark:border-gray-600/50 text-center transition-colors duration-300">
+                        <p className="text-gray-500 dark:text-gray-300 text-base font-medium transition-colors duration-300">No task selected</p>
+                        <p className="text-sm text-gray-400 dark:text-gray-400 mt-2 transition-colors duration-300">Choose a task from below or create a new one</p>
                       </div>
                     )}
                   </div>
                   
-                  {/* Vibrant Task Selection - Expanded */}
-                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200/50 shadow-sm hover:shadow-md transition-all duration-300">
+
+                  
+                  {/* Enhanced Task Selection - Full Width */}
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-lg p-4 border border-blue-200/50 dark:border-blue-700/50 shadow-sm hover:shadow-md transition-all duration-300 w-full">
                     <div className="flex items-center gap-2 mb-3">
                       <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-                        <span className="text-white text-xs">📝</span>
+                        <span className="text-white text-sm">📝</span>
                       </div>
-                      <h3 className="font-bold text-blue-800 text-sm tracking-wide">SELECT TASK</h3>
+                      <h3 className="font-bold text-blue-800 dark:text-blue-200 text-sm tracking-wide transition-colors duration-300">SELECT TASK</h3>
                     </div>
-                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                    <div className="space-y-3 max-h-56 overflow-y-auto">
                       {/* Main Tasks */}
                       {tasks.filter(task => task.status !== 'done').map(task => (
-                        <div key={task.id} className="space-y-2">
-                          <div className="flex items-center gap-2">
+                        <div key={task.id} className="space-y-3">
+                          <div className="flex items-center gap-3">
                             <button
                               onClick={() => startTimer('work', task.id)}
-                              className={`flex-1 text-left p-2 rounded-lg text-sm transition-all duration-300 ${
+                              className={`flex-1 text-left p-3 rounded-lg text-sm transition-all duration-300 ${
                                 currentTaskId === task.id 
-                                  ? 'bg-emerald-100 text-emerald-800 border-2 border-emerald-300 shadow-sm' 
-                                  : 'bg-white hover:bg-gray-100 text-gray-700 border border-gray-200 hover:border-emerald-300'
+                                  ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-200 border-2 border-emerald-300 dark:border-emerald-500 shadow-sm' 
+                                  : 'bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-600 hover:border-emerald-300 dark:hover:border-emerald-500'
                               }`}
                             >
                               <div className="flex items-center justify-between">
                                 <span className="truncate font-medium">📋 {task.title}</span>
-                                <span className="text-xs bg-emerald-50 text-emerald-700 px-2 py-1 rounded-full font-semibold ml-2">
+                                <span className="text-sm bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 px-3 py-1.5 rounded-full font-semibold ml-3 transition-colors duration-300">
                                   {task.pomodoros || 0} 🍅
                                 </span>
                               </div>
                             </button>
                             <button
                               onClick={() => completeTaskFromPomodoro(task.id)}
-                              className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg"
+                              className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white px-4 py-3 rounded-lg text-sm font-semibold transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg"
                               title="Mark as complete"
                             >
                               ✓
@@ -1505,25 +1617,25 @@ export default function DigitalGardenApp() {
                           
                           {/* Subtasks */}
                           {task.subtasks.filter(subtask => subtask.status !== 'done').map(subtask => (
-                            <div key={subtask.id} className="flex items-center gap-2 ml-4">
+                            <div key={subtask.id} className="flex items-center gap-3 ml-6">
                               <button
                                 onClick={() => startTimer('work', subtask.id)}
-                                className={`flex-1 text-left p-2 rounded-lg text-sm transition-all duration-300 ${
+                                className={`flex-1 text-left p-3 rounded-lg text-sm transition-all duration-300 ${
                                   currentTaskId === subtask.id 
-                                    ? 'bg-emerald-100 text-emerald-800 border-2 border-emerald-300 shadow-sm' 
-                                    : 'bg-gray-50 hover:bg-gray-100 text-gray-600 border border-gray-200 hover:border-emerald-300'
+                                    ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-200 border-2 border-emerald-300 dark:border-emerald-500 shadow-sm' 
+                                    : 'bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600 hover:border-emerald-300 dark:hover:border-emerald-500'
                                 }`}
                               >
                                 <div className="flex items-center justify-between">
-                                  <span className="text-gray-800 text-sm font-medium">└ {subtask.title}</span>
-                                  <span className="text-xs bg-emerald-50 text-emerald-700 px-2 py-1 rounded-full font-semibold ml-2">
+                                  <span className="text-gray-800 dark:text-gray-100 text-sm font-medium">└ {subtask.title}</span>
+                                  <span className="text-sm bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 px-3 py-1.5 rounded-full font-semibold ml-3 transition-colors duration-300">
                                     {subtask.pomodoros || 0} 🍅
                                   </span>
                                 </div>
                               </button>
                               <button
                                 onClick={() => completeTaskFromPomodoro(subtask.id)}
-                                className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg"
+                                className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white px-4 py-3 rounded-lg text-sm font-semibold transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg"
                                 title="Mark as complete"
                               >
                                 ✓
@@ -1533,9 +1645,9 @@ export default function DigitalGardenApp() {
                         </div>
                       ))}
                       {tasks.filter(task => task.status !== 'done').length === 0 && (
-                        <div className="bg-white/80 rounded-lg p-3 border border-gray-200/50 text-center">
-                          <p className="text-gray-500 text-sm font-medium">No tasks available</p>
-                          <p className="text-xs text-gray-400 mt-1">Create some tasks in the Task Management section first</p>
+                        <div className="bg-white/80 dark:bg-gray-700/80 rounded-lg p-4 border border-gray-200/50 dark:border-gray-600/50 text-center transition-colors duration-300">
+                          <p className="text-gray-500 dark:text-gray-300 text-base font-medium transition-colors duration-300">No tasks available</p>
+                          <p className="text-sm text-gray-400 dark:text-gray-400 mt-2 transition-colors duration-300">Create some tasks in the Task Management section first</p>
                         </div>
                       )}
                     </div>
@@ -1552,7 +1664,7 @@ export default function DigitalGardenApp() {
                           window.location.reload();
                         }
                       }}
-                      className="bg-rose-400 hover:bg-rose-500 text-white px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg"
+                      className="bg-rose-400 hover:bg-rose-500 dark:bg-rose-500 dark:hover:bg-rose-600 text-white px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg"
                       title="Clear all data and start fresh"
                     >
                       🗑️ Clear All Data
@@ -1560,16 +1672,16 @@ export default function DigitalGardenApp() {
                   </div>
                   
                   {/* Vibrant Sound Controls */}
-                  <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-xl p-3 border border-emerald-200/50 shadow-sm hover:shadow-md transition-all duration-300">
+                  <div className="bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-900/30 dark:to-green-900/30 rounded-xl p-3 border border-emerald-200/50 dark:border-emerald-700/50 shadow-sm hover:shadow-md transition-all duration-300">
                     <div className="flex items-center gap-2 mb-2">
                       <div className="w-6 h-6 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center">
                         <span className="text-white text-xs">🔊</span>
                       </div>
-                      <h4 className="font-bold text-emerald-800 text-xs tracking-wide">SOUND SETTINGS</h4>
+                      <h4 className="font-bold text-emerald-800 dark:text-emerald-200 text-xs tracking-wide transition-colors duration-300">SOUND SETTINGS</h4>
                     </div>
                     <div className="space-y-2">
-                      <div className="flex items-center justify-between bg-white/80 rounded-lg p-2 border border-gray-200/50">
-                        <span className="text-xs text-gray-700 font-medium">Sounds</span>
+                      <div className="flex items-center justify-between bg-white/80 dark:bg-gray-700/80 rounded-lg p-2 border border-gray-200/50 dark:border-gray-600/50 transition-colors duration-300">
+                        <span className="text-xs text-gray-700 dark:text-gray-200 font-medium transition-colors duration-300">Sounds</span>
                         <button
                           onClick={() => setSoundsEnabled(!soundsEnabled)}
                           className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-300 ${
@@ -1581,8 +1693,8 @@ export default function DigitalGardenApp() {
                           {soundsEnabled ? 'ON' : 'OFF'}
                         </button>
                       </div>
-                      <div className="flex items-center gap-2 bg-white/80 rounded-lg p-2 border border-gray-200/50">
-                        <span className="text-xs text-gray-700 font-medium">Volume</span>
+                      <div className="flex items-center gap-2 bg-white/80 dark:bg-gray-700/80 rounded-lg p-2 border border-gray-200/50 dark:border-gray-600/50 transition-colors duration-300">
+                        <span className="text-xs text-gray-700 dark:text-gray-200 font-medium transition-colors duration-300">Volume</span>
                         <input
                           type="range"
                           min="0"
@@ -1590,12 +1702,12 @@ export default function DigitalGardenApp() {
                           step="0.1"
                           value={volume}
                           onChange={(e) => setVolume(parseFloat(e.target.value))}
-                          className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer hover:bg-emerald-100 transition-colors"
+                          className="flex-1 h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-800 transition-colors"
                           style={{
                             background: `linear-gradient(to right, #10b981 0%, #10b981 ${volume * 100}%, #e5e7eb ${volume * 100}%, #e5e7eb 100%)`
                           }}
                         />
-                        <span className="text-xs text-gray-600 w-10 font-semibold">{Math.round(volume * 100)}%</span>
+                        <span className="text-xs text-gray-600 dark:text-gray-300 w-10 font-semibold transition-colors duration-300">{Math.round(volume * 100)}%</span>
                       </div>
                     </div>
                   </div>
@@ -1608,13 +1720,13 @@ export default function DigitalGardenApp() {
         {activeTab === 'tasks' && (
           <>
             {/* Task Management */}
-            <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-gray-900/50 p-6 transition-colors duration-300">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-semibold text-gray-800">Your Tasks</h2>
+                <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100 transition-colors duration-300">Your Tasks</h2>
                 <div className="flex gap-3">
                 <button
                   onClick={addTask}
-                  className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                  className="bg-emerald-500 hover:bg-emerald-600 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
                 >
                   + Add Task
                 </button>
@@ -1629,7 +1741,7 @@ export default function DigitalGardenApp() {
                         setExpandedTasks(new Set());
                       }
                     }}
-                    className="bg-rose-400 hover:bg-rose-500 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                    className="bg-rose-400 hover:bg-rose-500 dark:bg-rose-500 dark:hover:bg-rose-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
                     title="Clear all tasks and reset puzzle progress"
                   >
                     🗑️ Clear All Data
@@ -1642,7 +1754,7 @@ export default function DigitalGardenApp() {
               </div>
               
               {tasks.length === 0 && (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                   <p className="text-lg">No tasks yet! Click "Add Task" to start growing your garden.</p>
                 </div>
               )}
@@ -1653,7 +1765,7 @@ export default function DigitalGardenApp() {
 
 
         
-        <div className="mt-6 text-center text-sm text-gray-600">
+        <div className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400 transition-colors duration-300">
           <p>💡 <strong>Tips:</strong> Click on a task title to edit it, click the checkbox to mark as complete/incomplete</p>
           <p className="mt-1">🌿 <strong>Subtasks:</strong> Use the +⊂ button to add nested tasks, click ▼/▶ to expand/collapse</p>
           <p className="mt-1">🧩 <strong>Puzzle:</strong> Complete tasks to reveal seasonal garden images - each completion reveals a new puzzle piece!</p>
@@ -1664,7 +1776,7 @@ export default function DigitalGardenApp() {
               {/* Beautiful Authentication Modal */}
         {showAuth && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl border border-gray-100 overflow-hidden">
+            <div className="bg-white dark:bg-gray-800 rounded-3xl w-full max-w-md shadow-2xl dark:shadow-gray-900/50 border border-gray-100 dark:border-gray-700 overflow-hidden transition-colors duration-300">
               {/* Header with gradient */}
               <div className="bg-gradient-to-r from-emerald-400 to-teal-500 p-8 text-center text-white">
                 <div className="text-4xl mb-2">🌱</div>
@@ -1695,7 +1807,7 @@ export default function DigitalGardenApp() {
                   )}
 
                   <div>
-                    <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label htmlFor="email" className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2 transition-colors duration-300">
                       Email Address
                     </label>
                     <div className="relative">
@@ -1709,7 +1821,7 @@ export default function DigitalGardenApp() {
                         type="email"
                         value={authEmail}
                         onChange={(e) => setAuthEmail(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200"
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
                         placeholder="Enter your email"
                         required
                       />
@@ -1717,7 +1829,7 @@ export default function DigitalGardenApp() {
                   </div>
 
                   <div>
-                    <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label htmlFor="password" className="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2 transition-colors duration-300">
                       Password
                     </label>
                     <div className="relative">
@@ -1731,7 +1843,7 @@ export default function DigitalGardenApp() {
                         type="password"
                         value={authPassword}
                         onChange={(e) => setAuthPassword(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200"
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
                         placeholder="Enter your password"
                         required
                       />
@@ -1765,7 +1877,7 @@ export default function DigitalGardenApp() {
                         setAuthEmail("");
                         setAuthPassword("");
                       }}
-                      className="text-sm text-emerald-600 hover:text-emerald-700 font-medium transition-colors duration-200 hover:underline"
+                      className="text-sm text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 font-medium transition-colors duration-200 hover:underline"
                     >
                       {isSignUp ? "Already have an account? Sign In" : "Don't have an account? Sign Up"}
                     </button>
@@ -1785,6 +1897,8 @@ export default function DigitalGardenApp() {
             </div>
           </div>
         )}
+
+
     </div>
   );
 }

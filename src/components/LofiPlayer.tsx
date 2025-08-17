@@ -229,7 +229,7 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
   }, [tracks.length, currentTrackIndex, isLofiBackdropActive, currentSeason, isLoading]);
 
   return (
-    <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-3 shadow-lg border border-emerald-200/50 hover:shadow-xl transition-all duration-300">
+    <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm rounded-2xl p-3 shadow-lg dark:shadow-gray-900/50 border border-emerald-200/50 dark:border-emerald-700/50 hover:shadow-xl transition-all duration-300">
       {/* Ultra-Compact Header */}
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
@@ -237,8 +237,8 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
             <span className="text-white text-sm">🎧</span>
           </div>
           <div>
-            <h3 className="text-xs font-bold text-gray-800 tracking-wide">MUSIC PLAYER</h3>
-            <p className="text-xs text-emerald-600 font-medium">{currentSeason.charAt(0).toUpperCase() + currentSeason.slice(1)} Vibes • {tracks.length} Tracks</p>
+            <h3 className="text-xs font-bold text-gray-800 dark:text-gray-100 tracking-wide transition-colors duration-300">MUSIC PLAYER</h3>
+            <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium transition-colors duration-300">{currentSeason.charAt(0).toUpperCase() + currentSeason.slice(1)} Vibes • {tracks.length} Tracks</p>
           </div>
         </div>
         <div className="flex gap-2">
@@ -246,8 +246,8 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
             onClick={() => setShowPlaylist(!showPlaylist)}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 hover:scale-105 ${
               showPlaylist 
-                ? 'bg-emerald-100 text-emerald-700 border border-emerald-200 shadow-sm' 
-                : 'bg-blue-100 text-blue-600 hover:bg-blue-200 hover:text-blue-700'
+                ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700 shadow-sm' 
+                : 'bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-800 hover:text-blue-700 dark:hover:text-blue-300'
             }`}
           >
             {showPlaylist ? '📁 Playlist' : '🎵 Tracks'}
@@ -280,8 +280,8 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 hover:scale-105 ${
               getCurrentTrackThumbnail() 
                 ? isLofiBackdropActive 
-                  ? 'bg-emerald-100 text-emerald-700 border border-emerald-200 shadow-sm' 
-                  : 'bg-purple-100 text-purple-700 hover:bg-purple-200 hover:text-purple-800'
+                                  ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700 shadow-sm' 
+                : 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-800 hover:text-purple-800 dark:hover:text-purple-200'
                 : 'bg-gray-100 text-gray-400 cursor-not-allowed'
             }`}
             title={getCurrentTrackThumbnail() ? `${isLofiBackdropActive ? 'Click to return to seasonal garden images' : 'Click to use this track as puzzle backdrop'}` : 'No thumbnail available'}
@@ -293,15 +293,15 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
 
                          {/* Ultra-Compact Track Info */}
       <div className="mb-2">
-        <div className="flex items-center gap-2 p-2.5 bg-gradient-to-r from-slate-50/90 to-gray-50/90 rounded-lg border border-slate-200/60">
+        <div className="flex items-center gap-2 p-2.5 bg-gradient-to-r from-slate-50/90 to-gray-50/90 dark:from-slate-800/90 dark:to-gray-800/90 rounded-lg border border-slate-200/60 dark:border-slate-700/60 transition-colors duration-300">
           <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
             <span className="text-white text-sm">🎼</span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-gray-800 truncate">
+            <p className="text-xs font-semibold text-gray-800 dark:text-gray-100 truncate transition-colors duration-300">
               {isLoading ? 'Loading...' : currentTrack.title}
             </p>
-            <p className="text-xs text-purple-600 truncate">
+            <p className="text-xs text-purple-600 dark:text-purple-400 truncate transition-colors duration-300">
               {isLoading ? '...' : currentTrack.artist}
             </p>
           </div>
@@ -327,7 +327,7 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
           {/* Previous */}
           <button
             onClick={previousTrack}
-            className="w-9 h-9 bg-blue-100 hover:bg-blue-200 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-110"
+            className="w-9 h-9 bg-blue-100 dark:bg-blue-900/50 hover:bg-blue-200 dark:hover:bg-blue-800 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-110"
           >
             <span className="text-sm">⏮️</span>
           </button>
@@ -343,7 +343,7 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
           {/* Next */}
           <button
             onClick={nextTrack}
-            className="w-9 h-9 bg-blue-100 hover:bg-blue-200 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-110"
+            className="w-9 h-9 bg-blue-100 dark:bg-blue-900/50 hover:bg-blue-200 dark:hover:bg-blue-800 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-110"
           >
             <span className="text-sm">⏭️</span>
           </button>
@@ -353,7 +353,7 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
         <div className="flex items-center gap-3 justify-center">
           <button
             onClick={toggleMute}
-            className="w-7 h-7 bg-orange-100 hover:bg-orange-200 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-110"
+            className="w-7 h-7 bg-orange-100 dark:bg-orange-900/50 hover:bg-orange-200 dark:hover:bg-orange-800 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-110"
           >
             <span className="text-sm">{isMuted ? '🔇' : '🔊'}</span>
           </button>
@@ -374,13 +374,13 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
 
                    {/* Ultra-Compact Playlist */}
              {showPlaylist && (
-               <div className="border-t border-emerald-100 pt-1.5">
-                 <h4 className="font-medium text-emerald-800 mb-1.5 text-xs flex items-center gap-1">
+               <div className="border-t border-emerald-100 dark:border-emerald-700 pt-1.5 transition-colors duration-300">
+                 <h4 className="font-medium text-emerald-800 dark:text-emerald-200 mb-1.5 text-xs flex items-center gap-1 transition-colors duration-300">
                    <span>📁</span> Tracks
                  </h4>
                  <div className="space-y-0.5 max-h-16 overflow-y-auto">
                    {isLoading ? (
-                     <div className="text-xs text-gray-500 text-center py-1.5 bg-gray-50 rounded-md">🔄 Loading...</div>
+                     <div className="text-xs text-gray-500 dark:text-gray-400 text-center py-1.5 bg-gray-50 dark:bg-gray-700 rounded-md transition-colors duration-300">🔄 Loading...</div>
                    ) : (
                      tracks.map((track, index) => (
                        <div
@@ -388,16 +388,16 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
                          onClick={() => setCurrentTrackIndex(index)}
                          className={`flex items-center gap-2 p-1 rounded-md cursor-pointer transition-all duration-200 text-xs ${
                            index === currentTrackIndex
-                             ? 'bg-emerald-100 text-emerald-800'
-                             : 'hover:bg-emerald-50'
+                             ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-200'
+                             : 'hover:bg-emerald-50 dark:hover:bg-emerald-900/30'
                          }`}
                        >
                          <span className="text-xs">🎵</span>
                          <div className="flex-1 min-w-0">
-                           <p className="font-medium truncate text-xs">{track.title}</p>
+                           <p className="font-medium truncate text-xs transition-colors duration-300">{track.title}</p>
                          </div>
                          {index === currentTrackIndex && (
-                           <span className="text-emerald-600 text-xs">▶️</span>
+                           <span className="text-emerald-600 dark:text-emerald-400 text-xs transition-colors duration-300">▶️</span>
                          )}
                        </div>
                      ))
@@ -407,7 +407,7 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
              )}
 
                    {/* Ultra-Compact Status */}
-             <div className="text-xs text-center text-emerald-600 mt-1.5 py-1 bg-emerald-50/50 rounded-md border border-emerald-100/30 font-medium">
+             <div className="text-xs text-center text-emerald-600 dark:text-emerald-400 mt-1.5 py-1 bg-emerald-50/50 dark:bg-emerald-900/30 rounded-md border border-emerald-100/30 dark:border-emerald-700/30 font-medium transition-colors duration-300">
                {isLoading ? '🔄 Loading' : (isPlaying ? '🎵 Playing' : '⏸️ Paused')}
              </div>
     </div>
