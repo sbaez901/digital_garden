@@ -8,13 +8,15 @@ interface Track {
   thumbnail: string;
   videoId: string;
   viewCount?: string;
+  highResThumbnail?: string; // High-resolution thumbnail for puzzle
 }
 
 interface LofiPlayerProps {
   currentSeason: 'spring' | 'summer' | 'autumn' | 'winter';
+  isLofiBackdropActive?: boolean;
 }
 
-const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason }) => {
+const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropActive = false }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [volume, setVolume] = useState(0.7);
@@ -43,7 +45,7 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason }) => {
       setIsLoading(true);
       const query = seasonalQueries[season as keyof typeof seasonalQueries];
       const response = await fetch(
-        `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&videoCategoryId=10&maxResults=10&key=${API_KEY}`
+        `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&videoCategoryId=10&maxResults=40&key=${API_KEY}`
       );
       
       if (!response.ok) {
@@ -58,11 +60,19 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason }) => {
         duration: '3:00', // Default duration
         thumbnail: item.snippet.thumbnails.default.url,
         videoId: item.id.videoId,
-        viewCount: '1M+' // Default view count
+        viewCount: '1M+', // Default view count
+        highResThumbnail: item.snippet.thumbnails.maxres?.url || item.snippet.thumbnails.high?.url || item.snippet.thumbnails.medium?.url || item.snippet.thumbnails.default.url
       }));
       
       setTracks(fetchedTracks);
-      setCurrentTrackIndex(0);
+      // Randomly select first track for variety using time + season + puzzle version for more randomness
+      const timeSeed = Date.now();
+      const seasonSeed = season.charCodeAt(0) + season.charCodeAt(1);
+      const puzzleVersion = Math.floor(Math.random() * 1000); // Add extra randomness
+      const combinedSeed = timeSeed + seasonSeed + puzzleVersion;
+      const randomIndex = Math.floor((combinedSeed % Math.min(fetchedTracks.length, 40)));
+      setCurrentTrackIndex(randomIndex);
+      console.log(`🎲 Random track selected: ${randomIndex + 1}/${fetchedTracks.length} for ${season}`);
     } catch (error) {
       console.error('Error fetching lofi tracks:', error);
       // Fallback to default tracks if API fails
@@ -75,6 +85,14 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason }) => {
   };
 
   const currentTrack = tracks[currentTrackIndex] || { id: '1', title: 'Loading...', artist: '...', duration: '0:00', thumbnail: '🎵', videoId: 'jfKfPfyJRdk' };
+
+  // Function to get current track's high-res thumbnail for puzzle
+  const getCurrentTrackThumbnail = (): string | null => {
+    if (tracks.length > 0 && tracks[currentTrackIndex]) {
+      return tracks[currentTrackIndex].highResThumbnail || null;
+    }
+    return null;
+  };
 
   // YouTube player functions
   const playTrack = () => {
@@ -94,6 +112,19 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason }) => {
   const previousTrack = () => {
     setCurrentTrackIndex((prev) => (prev - 1 + tracks.length) % tracks.length);
   };
+
+  // Emit track change event for dynamic backdrop updates
+  useEffect(() => {
+    if (tracks.length > 0 && tracks[currentTrackIndex]) {
+      const currentTrack = tracks[currentTrackIndex];
+      window.dispatchEvent(new CustomEvent('trackChanged', {
+        detail: { 
+          thumbnail: currentTrack.highResThumbnail, 
+          trackTitle: currentTrack.title 
+        }
+      }));
+    }
+  }, [currentTrackIndex, tracks]);
 
   const toggleMute = () => {
     setIsMuted(!isMuted);
@@ -119,19 +150,44 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason }) => {
           </div>
           <div>
             <h3 className="text-xs font-bold text-gray-800 tracking-wide">MUSIC PLAYER</h3>
-            <p className="text-xs text-emerald-600 font-medium">{currentSeason.charAt(0).toUpperCase() + currentSeason.slice(1)} Vibes</p>
+            <p className="text-xs text-emerald-600 font-medium">{currentSeason.charAt(0).toUpperCase() + currentSeason.slice(1)} Vibes • {tracks.length} Tracks</p>
           </div>
         </div>
-        <button
-          onClick={() => setShowPlaylist(!showPlaylist)}
-          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 hover:scale-105 ${
-            showPlaylist 
-              ? 'bg-emerald-100 text-emerald-700 border border-emerald-200 shadow-sm' 
-              : 'bg-blue-100 text-blue-600 hover:bg-blue-200 hover:text-blue-700'
-          }`}
-        >
-          {showPlaylist ? '📁 Playlist' : '🎵 Tracks'}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowPlaylist(!showPlaylist)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 hover:scale-105 ${
+              showPlaylist 
+                ? 'bg-emerald-100 text-emerald-700 border border-emerald-200 shadow-sm' 
+                : 'bg-blue-100 text-blue-600 hover:bg-blue-200 hover:text-blue-700'
+            }`}
+          >
+            {showPlaylist ? '📁 Playlist' : '🎵 Tracks'}
+          </button>
+          <button
+            onClick={() => {
+              const thumbnail = getCurrentTrackThumbnail();
+              if (thumbnail) {
+                // Emit custom event for puzzle system to use this thumbnail
+                // If lofi backdrop is already active, this will toggle it off
+                window.dispatchEvent(new CustomEvent('useLofiThumbnail', { 
+                  detail: { thumbnail, trackTitle: currentTrack.title, toggle: true } 
+                }));
+              }
+            }}
+            disabled={!getCurrentTrackThumbnail()}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 hover:scale-105 ${
+              getCurrentTrackThumbnail() 
+                ? isLofiBackdropActive 
+                  ? 'bg-emerald-100 text-emerald-700 border border-emerald-200 shadow-sm' 
+                  : 'bg-purple-100 text-purple-700 hover:bg-purple-200 hover:text-purple-800'
+                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+            }`}
+            title={getCurrentTrackThumbnail() ? `Use "${currentTrack.title}" backdrop as puzzle` : 'No thumbnail available'}
+          >
+            {isLofiBackdropActive ? '🖼️ Active' : '🖼️ Puzzle'}
+          </button>
+        </div>
       </div>
 
                          {/* Ultra-Compact Track Info */}

@@ -145,6 +145,10 @@ export default function DigitalGardenApp() {
   const [currentSeason, setCurrentSeason] = useState<'spring' | 'summer' | 'autumn' | 'winter'>('spring');
   const [revealedPieces, setRevealedPieces] = useState<number>(0);
   const [puzzleVersion, setPuzzleVersion] = useState(0); // Force new random image selection
+  const [lofiThumbnail, setLofiThumbnail] = useState<string | null>(null); // Current lofi thumbnail for puzzle
+  const [lofiTrackTitle, setLofiTrackTitle] = useState<string>(''); // Current lofi track title
+  const [dynamicBackdropMode, setDynamicBackdropMode] = useState<boolean>(false); // Auto-update backdrop with track changes
+
 
   
   // Seasonal garden configurations
@@ -184,7 +188,55 @@ export default function DigitalGardenApp() {
     else setCurrentSeason('winter');
   }, []);
 
+  // Listen for lofi thumbnail selection events
+  useEffect(() => {
+    const handleLofiThumbnail = (event: CustomEvent) => {
+      const { thumbnail, trackTitle, toggle } = event.detail;
+      
+      if (toggle && lofiThumbnail) {
+        // Turn off lofi backdrop
+        setLofiThumbnail(null);
+        setLofiTrackTitle('');
+        setDynamicBackdropMode(false);
+        setRevealedPieces(0);
+        setPuzzleVersion(prev => prev + 1);
+        console.log(`🎵 Lofi backdrop turned off, returning to seasonal illustrations`);
+      } else {
+        // Turn on lofi backdrop
+        setLofiThumbnail(thumbnail);
+        setLofiTrackTitle(trackTitle);
+        setDynamicBackdropMode(true); // Enable dynamic backdrop mode
+        // Reset puzzle to show new lofi backdrop
+        setRevealedPieces(0);
+        setPuzzleVersion(prev => prev + 1);
+        console.log(`🎵 Using lofi backdrop: ${trackTitle}`);
+      }
+    };
 
+    window.addEventListener('useLofiThumbnail', handleLofiThumbnail as EventListener);
+    
+    return () => {
+      window.removeEventListener('useLofiThumbnail', handleLofiThumbnail as EventListener);
+    };
+  }, [lofiThumbnail]);
+
+  // Listen for track changes to update backdrop dynamically
+  useEffect(() => {
+    const handleTrackChange = (event: CustomEvent) => {
+      if (dynamicBackdropMode) {
+        const { thumbnail, trackTitle } = event.detail;
+        setLofiThumbnail(thumbnail);
+        setLofiTrackTitle(trackTitle);
+        console.log(`🎵 Dynamic backdrop update: ${trackTitle}`);
+      }
+    };
+
+    window.addEventListener('trackChanged', handleTrackChange as EventListener);
+    
+    return () => {
+      window.removeEventListener('trackChanged', handleTrackChange as EventListener);
+    };
+  }, [dynamicBackdropMode]);
 
   // Reveal puzzle piece function
   const revealPuzzlePiece = () => {
@@ -874,7 +926,11 @@ export default function DigitalGardenApp() {
                     const seasonImages = getSeasonImages(currentSeason);
                     let imageSrc = null;
                     
-                    if (seasonImages.length > 0) {
+                    // Priority: Use lofi thumbnail if available, otherwise use seasonal images
+                    if (lofiThumbnail) {
+                      imageSrc = lofiThumbnail;
+                      console.log(`🎵 Using lofi backdrop: ${lofiTrackTitle}`);
+                    } else if (seasonImages.length > 0) {
                       // Use a combination of season, current time, and puzzle version to get different images
                       // This ensures variety while keeping the same image during a session
                       const timeSeed = Math.floor(Date.now() / (1000 * 60 * 60 * 24)); // Changes daily
@@ -946,7 +1002,7 @@ export default function DigitalGardenApp() {
                    <div className="flex items-start gap-2">
                      <span className="text-base text-amber-500">💡</span>
                      <div className="text-xs text-gray-700">
-                       <span className="font-semibold">Tip:</span> Complete tasks to reveal puzzle pieces! Each completed task reveals part of your seasonal garden image.
+                       <span className="font-semibold">Tip:</span> Complete tasks to reveal puzzle pieces! Each completed task reveals part of your {lofiThumbnail ? 'lofi music backdrop' : 'seasonal garden image'}.
                      </div>
                    </div>
                  </div>
@@ -968,6 +1024,22 @@ export default function DigitalGardenApp() {
                   <div className="text-xs text-amber-600 font-medium">Complete</div>
                 </div>
               </div>
+              
+              {/* Lofi Backdrop Indicator */}
+              {lofiThumbnail && (
+                <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-3 border border-purple-100/50">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base text-purple-500">🎵</span>
+                    <div className="text-xs text-purple-700">
+                      <span className="font-semibold">Lofi Backdrop:</span> {lofiTrackTitle}
+                      {dynamicBackdropMode && (
+                        <span className="ml-2 text-purple-500">✨ Dynamic</span>
+                      )}
+                    </div>
+
+                  </div>
+                </div>
+              )}
               
               <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-lg p-3 border border-emerald-100/50">
                 <h3 className="font-semibold text-emerald-800 mb-2 flex items-center gap-2">
@@ -993,7 +1065,7 @@ export default function DigitalGardenApp() {
               </div>
               
               {/* Compact Lofi Music Player */}
-              <LofiPlayer currentSeason={currentSeason} />
+              <LofiPlayer currentSeason={currentSeason} isLofiBackdropActive={!!lofiThumbnail} />
             </div>
           </div>
         </div>
