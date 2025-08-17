@@ -3,6 +3,7 @@ import { useState, useMemo, useEffect } from "react";
 import { signIn, signUp } from "./firebase";
 // import { logOut } from "./firebase";
 // import Auth from "./Auth.jsx";
+import LofiPlayer from "./components/LofiPlayer";
 
 interface Task {
   id: string;
@@ -814,8 +815,10 @@ export default function DigitalGardenApp() {
           </div>
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Garden Canvas */}
-            <div className={`relative bg-gradient-to-b ${timeTheme.bgGradient} rounded-lg p-6 h-96 overflow-hidden transition-all duration-1000`}>
+            {/* Left Column - Puzzle Illustration and Tip */}
+            <div className="space-y-6">
+              {/* Garden Canvas */}
+              <div className={`relative bg-gradient-to-b ${timeTheme.bgGradient} rounded-lg p-6 h-96 overflow-hidden transition-all duration-1000`}>
 
               
               {/* Sophisticated Background Pattern */}
@@ -936,40 +939,51 @@ export default function DigitalGardenApp() {
                   )}
                 </div>
               </div>
+              </div>
+              
+                               {/* Tip Section - Below the puzzle illustration */}
+                 <div className="bg-gradient-to-br from-slate-50 to-gray-50 rounded-lg p-3 border border-slate-100/50">
+                   <div className="flex items-start gap-2">
+                     <span className="text-base text-amber-500">💡</span>
+                     <div className="text-xs text-gray-700">
+                       <span className="font-semibold">Tip:</span> Complete tasks to reveal puzzle pieces! Each completed task reveals part of your seasonal garden image.
+                     </div>
+                   </div>
+                 </div>
             </div>
             
-            {/* Puzzle Progress Stats */}
-            <div className="space-y-6">
-              <div className="grid grid-cols-3 gap-4">
-                <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-xl p-5 text-center transform hover:scale-105 transition-all duration-300 shadow-sm border border-emerald-100/50">
-                  <div className="text-3xl font-bold text-emerald-700 mb-1">{revealedPieces}</div>
-                  <div className="text-sm text-emerald-600 font-medium">Puzzle Pieces</div>
+            {/* Right Column - Stats, Puzzle Progress, and Lofi Player */}
+            <div className="space-y-4">
+              <div className="grid grid-cols-3 gap-3">
+                <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-lg p-3 text-center transform hover:scale-105 transition-all duration-300 shadow-sm border border-emerald-100/50">
+                  <div className="text-2xl font-bold text-emerald-700 mb-0.5">{revealedPieces}</div>
+                  <div className="text-xs text-emerald-600 font-medium">Puzzle Pieces</div>
                 </div>
-                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-5 text-center transform hover:scale-105 transition-all duration-300 shadow-sm border border-blue-100/50">
-                  <div className="text-3xl font-bold text-blue-700 mb-1">{seasonalGardens[currentSeason].pieces}</div>
-                  <div className="text-sm text-blue-600 font-medium">Total Pieces</div>
-                </div>
-                <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-5 text-center transform hover:scale-105 transition-all duration-300 shadow-sm border border-amber-100/50">
-                  <div className="text-3xl font-bold text-amber-700 mb-1">{Math.round((revealedPieces / seasonalGardens[currentSeason].pieces) * 100)}%</div>
-                  <div className="text-sm text-amber-600 font-medium">Complete</div>
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-3 text-center transform hover:scale-105 transition-all duration-300 shadow-sm border border-blue-100/50">
+                  <div className="text-2xl font-bold text-blue-700 mb-0.5">{seasonalGardens[currentSeason].pieces}</div>
+                  <div className="text-xs text-blue-600 font-medium">Total Pieces</div>
+                  </div>
+                <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-lg p-3 text-center transform hover:scale-105 transition-all duration-300 shadow-sm border border-amber-100/50">
+                  <div className="text-2xl font-bold text-amber-700 mb-0.5">{Math.round((revealedPieces / seasonalGardens[currentSeason].pieces) * 100)}%</div>
+                  <div className="text-xs text-amber-600 font-medium">Complete</div>
                 </div>
               </div>
               
-              <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-xl p-5 border border-emerald-100/50">
-                <h3 className="font-semibold text-emerald-800 mb-3 flex items-center gap-2">
-                  <span className="text-lg">🧩</span>
+              <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-lg p-3 border border-emerald-100/50">
+                <h3 className="font-semibold text-emerald-800 mb-2 flex items-center gap-2">
+                  <span className="text-base">🧩</span>
                   Puzzle Progress
                 </h3>
-                <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden mb-3">
+                <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden mb-2">
                   <div 
-                    className="bg-gradient-to-r from-emerald-400 to-green-500 h-3 rounded-full transition-all duration-1000 relative"
+                    className="bg-gradient-to-r from-emerald-400 to-green-500 h-2.5 rounded-full transition-all duration-1000 relative"
                     style={{ width: `${(revealedPieces / seasonalGardens[currentSeason].pieces) * 100}%` }}
                   >
                     {/* Subtle Shimmer Effect */}
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse"></div>
                   </div>
                 </div>
-                <div className="text-sm text-emerald-700 font-medium">
+                <div className="text-xs text-emerald-700 font-medium">
                   {revealedPieces === seasonalGardens[currentSeason].pieces ? '🎉 Puzzle Complete! 🚀 New puzzle loading...' :
                    revealedPieces > seasonalGardens[currentSeason].pieces * 0.7 ? '🌺 Almost there!' :
                    revealedPieces > seasonalGardens[currentSeason].pieces * 0.4 ? '🌿 Great progress!' :
@@ -978,14 +992,8 @@ export default function DigitalGardenApp() {
                 </div>
               </div>
               
-              <div className="bg-gradient-to-br from-slate-50 to-gray-50 rounded-xl p-4 border border-slate-100/50">
-                <div className="flex items-start gap-3">
-                  <span className="text-lg text-amber-500">💡</span>
-                  <div className="text-sm text-gray-700">
-                    <span className="font-semibold">Tip:</span> Complete tasks to reveal puzzle pieces! Each completed task reveals part of your seasonal garden image.
-                  </div>
-                </div>
-              </div>
+              {/* Compact Lofi Music Player */}
+              <LofiPlayer currentSeason={currentSeason} />
             </div>
           </div>
         </div>
