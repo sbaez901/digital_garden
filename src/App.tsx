@@ -1,9 +1,10 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 // import { useAuth } from "./AuthContext";
 import { signIn, signUp } from "./firebase";
 // import { logOut } from "./firebase";
 // import Auth from "./Auth.jsx";
 import LofiPlayer from "./components/LofiPlayer";
+import ReactPuzzle from "./components/ReactPuzzle";
 
 interface Task {
   id: string;
@@ -165,19 +166,19 @@ export default function DigitalGardenApp() {
     },
     summer: {
       name: 'Lavender Summer Garden',
-      pieces: 10,
+      pieces: 12,
       colors: ['from-purple-100 to-indigo-200', 'from-purple-200 to-indigo-300'],
       theme: '🌿 Summer Abundance'
     },
     autumn: {
       name: 'Maple Autumn Garden',
-      pieces: 8,
+      pieces: 12,
       colors: ['from-orange-100 to-red-200', 'from-orange-200 to-red-300'],
       theme: '🍂 Autumn Warmth'
     },
     winter: {
       name: 'Snow Winter Garden',
-      pieces: 6,
+      pieces: 12,
       colors: ['from-blue-100 to-slate-200', 'from-blue-200 to-slate-300'],
       theme: '❄️ Winter Serenity'
     }
@@ -197,23 +198,24 @@ export default function DigitalGardenApp() {
     const handleLofiThumbnail = (event: CustomEvent) => {
       const { thumbnail, trackTitle, toggle } = event.detail;
       
-      if (toggle && lofiThumbnail) {
-        // Turn off lofi backdrop
+      console.log(`🎵 Lofi thumbnail event received:`, { thumbnail, trackTitle, toggle, currentLofiThumbnail: lofiThumbnail });
+      
+      if (toggle) {
+        // Turn ON lofi backdrop
+        setLofiThumbnail(thumbnail);
+        setLofiTrackTitle(trackTitle);
+        setDynamicBackdropMode(true);
+        setRevealedPieces(0);
+        setPuzzleVersion(prev => prev + 1);
+        console.log(`🎵 Lofi backdrop turned ON: ${trackTitle}`);
+      } else {
+        // Turn OFF lofi backdrop
         setLofiThumbnail(null);
         setLofiTrackTitle('');
         setDynamicBackdropMode(false);
         setRevealedPieces(0);
         setPuzzleVersion(prev => prev + 1);
-        console.log(`🎵 Lofi backdrop turned off, returning to seasonal illustrations`);
-      } else {
-        // Turn on lofi backdrop
-        setLofiThumbnail(thumbnail);
-        setLofiTrackTitle(trackTitle);
-        setDynamicBackdropMode(true); // Enable dynamic backdrop mode
-        // Reset puzzle to show new lofi backdrop
-        setRevealedPieces(0);
-        setPuzzleVersion(prev => prev + 1);
-        console.log(`🎵 Using lofi backdrop: ${trackTitle}`);
+        console.log(`🎵 Lofi backdrop turned OFF, returning to seasonal illustrations`);
       }
     };
 
@@ -242,41 +244,67 @@ export default function DigitalGardenApp() {
     };
   }, [dynamicBackdropMode]);
 
+  // Track if we're currently revealing a piece to prevent double reveals
+  const isRevealingRef = useRef(false);
+  
   // Reveal puzzle piece function
   const revealPuzzlePiece = () => {
+    // Prevent multiple simultaneous reveals
+    if (isRevealingRef.current) {
+      console.log(`⚠️ Already revealing a piece, skipping this call`);
+      return;
+    }
+    
     const currentGarden = seasonalGardens[currentSeason];
+    console.log(`🧩 revealPuzzlePiece called! Current: ${revealedPieces}/${currentGarden.pieces}`);
+    
     if (revealedPieces < currentGarden.pieces) {
+      isRevealingRef.current = true;
+      
       setRevealedPieces(prev => {
         const newCount = prev + 1;
+        console.log(`🧩 Setting revealedPieces from ${prev} to ${newCount}`);
         
         // Check if puzzle is complete
         if (newCount >= currentGarden.pieces) {
+          console.log(`🎉 Puzzle complete! Resetting in 3 seconds...`);
           // Puzzle complete! Auto-reset after a short delay
           setTimeout(() => {
             setRevealedPieces(0); // Reset puzzle pieces
             // Force a new random image by incrementing puzzle version
             setPuzzleVersion(prev => prev + 1);
-          }, 2000); // 2 second delay to show completion message
+            console.log(`🔄 Puzzle reset! New session started.`);
+          }, 3000); // 3 second delay to show completion message
         }
+        
+        // Reset the flag after state update
+        setTimeout(() => {
+          isRevealingRef.current = false;
+        }, 100);
         
         return newCount;
       });
+    } else {
+      console.log(`⚠️ Cannot reveal more pieces: ${revealedPieces}/${currentGarden.pieces}`);
+      isRevealingRef.current = false;
     }
   };
   
   // Override task completion to trigger puzzle piece reveal
   const completeTaskFromPomodoro = (taskId: string) => {
+    let shouldRevealPiece = false;
+    
     setTasks(tasks.map(task => {
       // Check if current task is a main task
       if (task.id === taskId) {
         playSound('task-complete');
-        revealPuzzlePiece(); // Reveal puzzle piece
+        shouldRevealPiece = true;
         return { ...task, status: 'done' };
       }
       // Check if current task is a subtask
       if (task.subtasks.some(subtask => subtask.id === taskId)) {
         playSound('task-complete');
-        revealPuzzlePiece(); // Reveal puzzle piece
+        shouldRevealPiece = true;
         return {
           ...task,
           subtasks: task.subtasks.map(subtask =>
@@ -288,6 +316,11 @@ export default function DigitalGardenApp() {
       }
       return task;
     }));
+    
+    // Only reveal one puzzle piece per task completion
+    if (shouldRevealPiece) {
+      revealPuzzlePiece();
+    }
     
     // If the completed task was the current timer task, clear it
     if (currentTaskId === taskId) {
@@ -533,7 +566,27 @@ export default function DigitalGardenApp() {
   };
 
   const toggleStatus = (id: string, parentId?: string) => {
+    console.log(`🔄 toggleStatus called:`, { id, parentId });
+    console.log(`🔄 Stack trace:`, new Error().stack);
+    
     setTasks(prevTasks => {
+      // Find the current task/subtask to check its previous status
+      const currentTask = prevTasks.find(t => parentId ? t.id === parentId : t.id === id);
+      let wasAlreadyDone = false;
+      
+      if (currentTask) {
+        if (parentId) {
+          // Check subtask status
+          const currentSubtask = currentTask.subtasks.find(st => st.id === id);
+          wasAlreadyDone = currentSubtask?.status === 'done';
+          console.log(`🔄 Subtask status check:`, { subtaskId: id, wasAlreadyDone, currentStatus: currentSubtask?.status });
+        } else {
+          // Check main task status
+          wasAlreadyDone = currentTask.status === 'done';
+          console.log(`🔄 Main task status check:`, { taskId: id, wasAlreadyDone, currentStatus: currentTask.status });
+        }
+      }
+      
       const updatedTasks = prevTasks.map(task => {
       if (parentId) {
         if (task.id === parentId) {
@@ -555,21 +608,33 @@ export default function DigitalGardenApp() {
       }
       });
       
-      // Check if this task/subtask was just completed
+      // Check if this task/subtask was just completed (and wasn't already done)
       const task = updatedTasks.find(t => parentId ? t.id === parentId : t.id === id);
-      if (task) {
+      if (task && !wasAlreadyDone) {
         if (parentId) {
           // Subtask completion
           const subtask = task.subtasks.find(st => st.id === id);
           if (subtask && subtask.status === 'done') {
-            setTimeout(() => revealPuzzlePiece(), 0);
+            console.log(`🧩 Revealing puzzle piece for subtask completion:`, { subtaskId: id, parentId });
+            // Use the same puzzle reveal logic as Pomodoro timer
+            revealPuzzlePiece();
           }
         } else {
           // Main task completion
           if (task.status === 'done') {
-            setTimeout(() => revealPuzzlePiece(), 0);
+            console.log(`🧩 Revealing puzzle piece for main task completion:`, { taskId: id });
+            // Use the same puzzle reveal logic as Pomodoro timer
+            revealPuzzlePiece();
           }
         }
+      } else {
+        console.log(`⚠️ No puzzle piece revealed:`, { 
+          taskFound: !!task, 
+          wasAlreadyDone, 
+          taskStatus: task?.status,
+          isMainTask: !parentId,
+          isSubtask: !!parentId
+        });
       }
       
       return updatedTasks;
@@ -934,27 +999,10 @@ export default function DigitalGardenApp() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Left Column - Puzzle Illustration and Tip */}
             <div className="space-y-6">
-            {/* Garden Canvas */}
-            <div className={`relative bg-gradient-to-b ${timeTheme.bgGradient} rounded-lg p-6 h-96 overflow-hidden transition-all duration-1000`}>
-
-              
-              {/* Sophisticated Background Pattern */}
-              <div className="absolute inset-0 opacity-20">
-                <div className="absolute inset-0" style={{
-                  backgroundImage: `radial-gradient(circle at 20% 80%, rgba(34, 197, 94, 0.1) 0%, transparent 50%),
-                                  radial-gradient(circle at 80% 20%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
-                                  radial-gradient(circle at 40% 40%, rgba(168, 85, 247, 0.05) 0%, transparent 50%)`
-                }}></div>
-              </div>
-              
-              {/* Puzzle Garden Grid */}
-              <div className="absolute inset-0 flex items-center justify-center p-4">
-                <div className="relative" style={{
-                  width: '100%',
-                  height: '100%'
-                }}>
-                  {/* Simple fade-in reveal system */}
-                  {(() => {
+            {/* Puzzle Canvas - Now handled entirely by ReactPuzzle */}
+            <div className="relative rounded-lg h-96 overflow-hidden bg-white">
+              {/* ReactPuzzle Component - Grid-based puzzle system */}
+              {(() => {
                     // Get all available images for the current season
                     const getSeasonImages = (season: string) => {
                       switch (season) {
@@ -983,13 +1031,27 @@ export default function DigitalGardenApp() {
                           '/images/autumn/cozy-autumn-scene-house-path-flowers.jpg',
                           '/images/autumn/10100663.jpg'
                         ];
-                        case 'winter': return [];
+                        case 'winter': return [
+                          '/images/winter/10669206_4531704.jpg',
+                          '/images/winter/33434512_8041323.jpg',
+                          '/images/winter/10848949_4564205.jpg',
+                          '/images/winter/75862082_9838625.jpg',
+                          '/images/winter/34284850_8111438.jpg',
+                          '/images/winter/78136140_9874710.jpg',
+                          '/images/winter/3d-rendering-illustration-botanic-garden (1).jpg',
+                          '/images/winter/10501569_4485483.jpg',
+                          '/images/winter/33745218_8085164.jpg',
+                          '/images/winter/3925076_12866.jpg'
+                        ];
                         default: return [];
                       }
                     };
                     
                     const seasonImages = getSeasonImages(currentSeason);
                     let imageSrc = null;
+                    
+                    // Debug: Log current puzzle state
+                    console.log(`🧩 Puzzle state: lofiThumbnail=${!!lofiThumbnail}, trackTitle=${lofiTrackTitle}, revealedPieces=${revealedPieces}, season=${currentSeason}`);
                     
                     // Priority: Use lofi thumbnail if available, otherwise use seasonal images
                     if (lofiThumbnail) {
@@ -1019,34 +1081,18 @@ export default function DigitalGardenApp() {
                       );
                     }
                     
+                    // Use ReactPuzzle component instead of simple image display
                     return (
-                      <div className="w-full h-full relative">
-                        {/* Background image with fade-in effect */}
-                        <img 
-                          src={imageSrc} 
-                          alt="Seasonal Garden"
-                          className="w-full h-full object-cover rounded-lg transition-opacity duration-1000"
-                          style={{
-                            opacity: revealedPieces / seasonalGardens[currentSeason].pieces
-                          }}
-                        />
-                        
-                        {/* Colored overlay that fades out as image appears */}
-                        <div 
-                          className="absolute inset-0 transition-opacity duration-1000 rounded-lg"
-                          style={{
-                            background: `linear-gradient(135deg, ${seasonalGardens[currentSeason].colors[0]}, ${seasonalGardens[currentSeason].colors[1]})`,
-                            opacity: 1 - (revealedPieces / seasonalGardens[currentSeason].pieces), // Inverse of image opacity
-                            zIndex: 10
-                          }}
-                        />
-                        
-
-                        </div>
+                      <ReactPuzzle
+                        imageSrc={imageSrc}
+                        revealedPieces={revealedPieces}
+                        totalPieces={seasonalGardens[currentSeason].pieces}
+                        onPieceRevealed={() => {
+                          console.log('🧩 Puzzle piece revealed!');
+                        }}
+                      />
                     );
                   })()}
-                </div>
-              </div>
               
               {/* Garden Stats Overlay */}
               <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg p-4 text-sm shadow-sm">
@@ -1182,9 +1228,14 @@ export default function DigitalGardenApp() {
                 </div>
               </div>
               
-              {/* Beautiful Mode Tabs */}
-              <div className="relative bg-white/50 backdrop-blur-sm rounded-2xl p-2 mb-6 shadow-inner">
-                                                        {[
+              {/* Mode Tabs will be positioned over the timer on the left side */}
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Beautiful Timer Display */}
+                <div className="text-center">
+                  {/* Mode Tabs positioned over timer */}
+                  <div className="relative bg-white/50 backdrop-blur-sm rounded-2xl p-2 mb-4 shadow-inner">
+                    {[
                       { key: 'work', label: 'Focus', color: 'bg-emerald-600', shadow: 'shadow-emerald-300/20' },
                       { key: 'shortBreak', label: 'Break', color: 'bg-blue-600', shadow: 'shadow-blue-300/20' },
                       { key: 'longBreak', label: 'Rest', color: 'bg-yellow-500', shadow: 'shadow-yellow-300/20' }
@@ -1213,11 +1264,8 @@ export default function DigitalGardenApp() {
                         )}
                       </button>
                     ))}
-              </div>
-              
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Beautiful Timer Display */}
-                <div className="text-center">
+                  </div>
+                  
                   <div className="relative w-48 h-48 mx-auto mb-6">
                     {/* Outer glow ring */}
                     <div className={`absolute inset-0 rounded-full ${timerState === 'work' ? 'bg-emerald-600' : timerState === 'shortBreak' ? 'bg-blue-600' : 'bg-yellow-500'} opacity-20 blur-xl animate-pulse`}></div>
@@ -1340,27 +1388,39 @@ export default function DigitalGardenApp() {
                 
                 {/* Compact Modern Timer Stats & Task Selection */}
                 <div className="space-y-3">
-                  {/* Vibrant Current Task */}
-                  <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-xl p-3 border border-emerald-200/50 shadow-sm hover:shadow-md transition-all duration-300">
-                    <div className="flex items-center gap-2 mb-2">
+                  {/* Vibrant Current Task - Expanded */}
+                  <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-xl p-4 border border-emerald-200/50 shadow-sm hover:shadow-md transition-all duration-300">
+                    <div className="flex items-center gap-2 mb-3">
                       <div className="w-6 h-6 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center">
                         <span className="text-white text-xs">🎯</span>
                       </div>
-                      <h3 className="font-bold text-emerald-800 text-xs tracking-wide">CURRENT TASK</h3>
+                      <h3 className="font-bold text-emerald-800 text-sm tracking-wide">CURRENT TASK</h3>
                     </div>
                     {currentTaskId ? (
-                      <div className="space-y-1">
-                        {/* Find and display the current task */}
+                      <div className="space-y-2">
+                        {/* Find and display the current task with expanded details */}
                         {(() => {
                           // First check if it's a main task
                           const mainTask = tasks.find(t => t.id === currentTaskId);
                           if (mainTask) {
                             return (
-                              <div className="flex items-center justify-between bg-white/80 rounded-lg p-2 border border-emerald-200/50">
-                                <span className="text-gray-800 text-sm font-medium">📋 {mainTask.title}</span>
-                                <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full font-semibold">
-                                  {mainTask.pomodoros || 0} 🍅
-                                </span>
+                              <div className="bg-white/80 rounded-lg p-3 border border-emerald-200/50">
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="text-gray-800 text-sm font-semibold">📋 {mainTask.title}</span>
+                                  <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full font-semibold">
+                                    {mainTask.pomodoros || 0} 🍅
+                                  </span>
+                                </div>
+                                <div className="text-xs text-gray-600 mb-2">
+                                  Status: <span className={`font-medium ${mainTask.status === 'done' ? 'text-emerald-600' : 'text-amber-600'}`}>
+                                    {mainTask.status === 'done' ? '✅ Completed' : '⏳ In Progress'}
+                                  </span>
+                                </div>
+                                {mainTask.subtasks.length > 0 && (
+                                  <div className="text-xs text-gray-500">
+                                    Subtasks: {mainTask.subtasks.filter(st => st.status === 'done').length}/{mainTask.subtasks.length} completed
+                                  </div>
+                                )}
                               </div>
                             );
                           }
@@ -1370,13 +1430,20 @@ export default function DigitalGardenApp() {
                             const subtask = task.subtasks.find(st => st.id === currentTaskId);
                             if (subtask) {
                               return (
-                                <div className="space-y-1 bg-white/80 rounded-lg p-2 border border-emerald-200/50">
-                                  <div className="text-xs text-gray-500 font-medium">{task.title}</div>
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-gray-800 text-sm font-medium">└ {subtask.title}</span>
-                                    <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full font-semibold">
-                                      {subtask.pomodoros || 0} 🍅
-                                    </span>
+                                <div className="bg-white/80 rounded-lg p-3 border border-emerald-200/50">
+                                  <div className="text-xs text-gray-500 font-medium mb-2">📁 Parent: {task.title}</div>
+                                  <div className="space-y-2">
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-gray-800 text-sm font-semibold">└ {subtask.title}</span>
+                                      <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full font-semibold">
+                                        {subtask.pomodoros || 0} 🍅
+                                      </span>
+                                    </div>
+                                    <div className="text-xs text-gray-600">
+                                      Status: <span className={`font-medium ${subtask.status === 'done' ? 'text-emerald-600' : 'text-amber-600'}`}>
+                                        {subtask.status === 'done' ? '✅ Completed' : '⏳ In Progress'}
+                                      </span>
+                                    </div>
                                   </div>
                                 </div>
                               );
@@ -1384,36 +1451,37 @@ export default function DigitalGardenApp() {
                           }
                           
                           return (
-                            <div className="flex items-center justify-between bg-white/80 rounded-lg p-2 border border-gray-200/50">
+                            <div className="bg-white/80 rounded-lg p-3 border border-gray-200/50">
                               <span className="text-gray-600 text-sm">Unknown Task</span>
-                              <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">0 🍅</span>
+                              <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full ml-2">0 🍅</span>
                             </div>
                           );
                         })()}
                       </div>
                     ) : (
-                      <div className="bg-white/80 rounded-lg p-2 border border-gray-200/50 text-center">
-                        <p className="text-gray-500 text-xs font-medium">No task selected</p>
+                      <div className="bg-white/80 rounded-lg p-3 border border-gray-200/50 text-center">
+                        <p className="text-gray-500 text-sm font-medium">No task selected</p>
+                        <p className="text-xs text-gray-400 mt-1">Choose a task from the right panel to start your Pomodoro session</p>
                       </div>
                     )}
                   </div>
                   
-                  {/* Vibrant Task Selection */}
-                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-3 border border-blue-200/50 shadow-sm hover:shadow-md transition-all duration-300">
-                    <div className="flex items-center gap-2 mb-2">
+                  {/* Vibrant Task Selection - Expanded */}
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200/50 shadow-sm hover:shadow-md transition-all duration-300">
+                    <div className="flex items-center gap-2 mb-3">
                       <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
                         <span className="text-white text-xs">📝</span>
                       </div>
-                      <h3 className="font-bold text-blue-800 text-xs tracking-wide">SELECT TASK</h3>
+                      <h3 className="font-bold text-blue-800 text-sm tracking-wide">SELECT TASK</h3>
                     </div>
-                    <div className="space-y-1 max-h-24 overflow-y-auto">
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
                       {/* Main Tasks */}
                       {tasks.filter(task => task.status !== 'done').map(task => (
-                        <div key={task.id} className="space-y-1">
+                        <div key={task.id} className="space-y-2">
                           <div className="flex items-center gap-2">
                             <button
                               onClick={() => startTimer('work', task.id)}
-                              className={`flex-1 text-left p-1.5 rounded-lg text-xs transition-all duration-300 ${
+                              className={`flex-1 text-left p-2 rounded-lg text-sm transition-all duration-300 ${
                                 currentTaskId === task.id 
                                   ? 'bg-emerald-100 text-emerald-800 border-2 border-emerald-300 shadow-sm' 
                                   : 'bg-white hover:bg-gray-100 text-gray-700 border border-gray-200 hover:border-emerald-300'
@@ -1421,14 +1489,14 @@ export default function DigitalGardenApp() {
                             >
                               <div className="flex items-center justify-between">
                                 <span className="truncate font-medium">📋 {task.title}</span>
-                                <span className="text-xs bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded-full font-semibold">
+                                <span className="text-xs bg-emerald-50 text-emerald-700 px-2 py-1 rounded-full font-semibold ml-2">
                                   {task.pomodoros || 0} 🍅
                                 </span>
                               </div>
                             </button>
                             <button
                               onClick={() => completeTaskFromPomodoro(task.id)}
-                              className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white px-2 py-1.5 rounded-lg text-xs font-semibold transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg"
+                              className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg"
                               title="Mark as complete"
                             >
                               ✓
@@ -1437,25 +1505,25 @@ export default function DigitalGardenApp() {
                           
                           {/* Subtasks */}
                           {task.subtasks.filter(subtask => subtask.status !== 'done').map(subtask => (
-                            <div key={subtask.id} className="flex items-center gap-2 ml-3">
+                            <div key={subtask.id} className="flex items-center gap-2 ml-4">
                               <button
                                 onClick={() => startTimer('work', subtask.id)}
-                                className={`flex-1 text-left p-1.5 rounded-lg text-xs transition-all duration-300 ${
+                                className={`flex-1 text-left p-2 rounded-lg text-sm transition-all duration-300 ${
                                   currentTaskId === subtask.id 
                                     ? 'bg-emerald-100 text-emerald-800 border-2 border-emerald-300 shadow-sm' 
                                     : 'bg-gray-50 hover:bg-gray-100 text-gray-600 border border-gray-200 hover:border-emerald-300'
                                 }`}
                               >
                                 <div className="flex items-center justify-between">
-                                  <span className="text-gray-800 text-xs font-medium">└ {subtask.title}</span>
-                                  <span className="text-xs bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded-full font-semibold">
+                                  <span className="text-gray-800 text-sm font-medium">└ {subtask.title}</span>
+                                  <span className="text-xs bg-emerald-50 text-emerald-700 px-2 py-1 rounded-full font-semibold ml-2">
                                     {subtask.pomodoros || 0} 🍅
                                   </span>
                                 </div>
                               </button>
                               <button
                                 onClick={() => completeTaskFromPomodoro(subtask.id)}
-                                className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white px-2 py-1.5 rounded-lg text-xs font-semibold transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg"
+                                className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg"
                                 title="Mark as complete"
                               >
                                 ✓
@@ -1465,8 +1533,9 @@ export default function DigitalGardenApp() {
                         </div>
                       ))}
                       {tasks.filter(task => task.status !== 'done').length === 0 && (
-                        <div className="bg-white/80 rounded-lg p-2 border border-gray-200/50 text-center">
-                          <p className="text-gray-500 text-xs font-medium">No tasks available</p>
+                        <div className="bg-white/80 rounded-lg p-3 border border-gray-200/50 text-center">
+                          <p className="text-gray-500 text-sm font-medium">No tasks available</p>
+                          <p className="text-xs text-gray-400 mt-1">Create some tasks in the Task Management section first</p>
                         </div>
                       )}
                     </div>
