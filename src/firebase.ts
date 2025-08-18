@@ -132,6 +132,8 @@ export const onAuthChange = (callback: (user: any) => void) => {
 // Task Persistence Functions
 export const saveTasks = async (userId: string, tasks: any[]) => {
   try {
+    console.log('🔄 Attempting to save tasks for user:', userId, 'Tasks count:', tasks.length);
+    
     const db = getFirestoreInstance();
     const { firestore } = await getFirebaseModules();
     
@@ -140,15 +142,22 @@ export const saveTasks = async (userId: string, tasks: any[]) => {
       tasks: tasks,
       lastUpdated: new Date().toISOString()
     });
-    console.log('Tasks saved to Firebase successfully');
-  } catch (error) {
-    console.error('Failed to save tasks to Firebase:', error);
-    throw new Error('Failed to save tasks');
+    console.log('✅ Tasks saved to Firebase successfully');
+  } catch (error: any) {
+    console.error('❌ Failed to save tasks to Firebase:', error);
+    console.error('Error details:', {
+      code: error.code,
+      message: error.message,
+      stack: error.stack
+    });
+    throw new Error(`Failed to save tasks: ${error.message}`);
   }
 };
 
 export const loadTasks = async (userId: string) => {
   try {
+    console.log('🔄 Attempting to load tasks for user:', userId);
+    
     const db = getFirestoreInstance();
     const { firestore } = await getFirebaseModules();
     
@@ -157,14 +166,19 @@ export const loadTasks = async (userId: string) => {
     
     if (userDoc.exists()) {
       const userData = userDoc.data();
-      console.log('Tasks loaded from Firebase successfully');
+      console.log('✅ Tasks loaded from Firebase successfully:', userData.tasks?.length || 0);
       return userData.tasks || [];
     } else {
-      console.log('No existing tasks found, starting fresh');
+      console.log('📝 No existing tasks found, starting fresh');
       return [];
     }
-  } catch (error) {
-    console.error('Failed to load tasks from Firebase:', error);
-    throw new Error('Failed to load tasks');
+  } catch (error: any) {
+    console.error('❌ Failed to load tasks from Firebase:', error);
+    console.error('Error details:', {
+      code: error.code,
+      message: error.message,
+      stack: error.stack
+    });
+    throw new Error(`Failed to load tasks: ${error.message}`);
   }
 };
