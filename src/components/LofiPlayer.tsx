@@ -21,7 +21,6 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [volume, setVolume] = useState(0.7);
   const [isMuted, setIsMuted] = useState(false);
-  const [showPlaylist, setShowPlaylist] = useState(false);
   const [tracks, setTracks] = useState<Track[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(0);
@@ -185,11 +184,15 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
   };
 
   const nextTrack = () => {
-    setCurrentTrackIndex((prev) => (prev + 1) % tracks.length);
+    // Select a random track instead of just the next one
+    const randomIndex = Math.floor(Math.random() * tracks.length);
+    setCurrentTrackIndex(randomIndex);
   };
 
   const previousTrack = () => {
-    setCurrentTrackIndex((prev) => (prev - 1 + tracks.length) % tracks.length);
+    // Select a random track instead of just the previous one
+    const randomIndex = Math.floor(Math.random() * tracks.length);
+    setCurrentTrackIndex(randomIndex);
   };
 
   // Emit track change event for dynamic backdrop updates
@@ -240,20 +243,10 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
           </div>
           <div>
             <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100 transition-colors duration-300">Focus Music</h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400 transition-colors duration-300">{currentSeason.charAt(0).toUpperCase() + currentSeason.slice(1)} Vibes</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 transition-colors duration-300">{currentSeason.charAt(0).toUpperCase() + currentSeason.slice(1)} Vibes • Random</p>
           </div>
         </div>
         <div className="flex gap-1.5">
-          <button
-            onClick={() => setShowPlaylist(!showPlaylist)}
-            className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 hover:scale-105 ${
-              showPlaylist 
-                ? 'bg-emerald-500 text-white shadow-sm' 
-                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-            }`}
-          >
-            {showPlaylist ? '📁' : '🎵'}
-          </button>
           <button
             onClick={() => {
               const thumbnail = getCurrentTrackThumbnail();
@@ -387,36 +380,7 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
                      </div>
                    </div>
 
-                   {/* Clean Playlist */}
-                   {showPlaylist && (
-                     <div className="border-t border-gray-200/30 dark:border-gray-600/30 pt-2 transition-colors duration-300">
-                       <div className="space-y-1 max-h-16 overflow-y-auto">
-                         {isLoading ? (
-                           <div className="text-xs text-gray-500 dark:text-gray-400 text-center py-1.5">🔄 Loading...</div>
-                         ) : (
-                           tracks.map((track, index) => (
-                             <div
-                               key={track.id}
-                               onClick={() => setCurrentTrackIndex(index)}
-                               className={`flex items-center gap-2 p-1.5 rounded-lg cursor-pointer transition-all duration-200 text-xs ${
-                                 index === currentTrackIndex
-                                   ? 'bg-emerald-500 text-white'
-                                   : 'hover:bg-gray-100 dark:hover:bg-gray-700/50'
-                               }`}
-                             >
-                               <span className="text-xs">🎵</span>
-                               <div className="flex-1 min-w-0">
-                                 <p className="font-medium truncate text-xs transition-colors duration-300">{track.title}</p>
-                               </div>
-                               {index === currentTrackIndex && (
-                                 <span className="text-white text-xs">▶️</span>
-                               )}
-                             </div>
-                           ))
-                         )}
-                       </div>
-                     </div>
-                   )}
+
 
                    {/* Clean Status */}
                    <div className="text-xs text-center text-emerald-600 dark:text-emerald-400 py-1.5">
