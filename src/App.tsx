@@ -362,7 +362,7 @@ export default function DigitalGardenApp() {
       case 'morning':
         return {
           bgGradient: 'from-yellow-100 to-orange-100',
-          textColor: 'text-orange-800',
+          textColor: 'text-emerald-700',
           icon: '🌅',
           message: 'Good morning! Your garden is waking up with the sun.'
         };
@@ -461,6 +461,7 @@ export default function DigitalGardenApp() {
         }
         return task;
       }));
+      // Only increment completed pomodoros for work sessions
       setCompletedPomodoros(prev => prev + 1);
       playSound('timer-end');
     }
@@ -687,11 +688,11 @@ export default function DigitalGardenApp() {
         ));
       } else {
         // Editing a main task
-      setTasks(tasks.map(task => 
-        task.id === editingId 
-          ? { ...task, title: editingTitle.trim() }
-          : task
-      ));
+        setTasks(tasks.map(task => 
+          task.id === editingId 
+            ? { ...task, title: editingTitle.trim() }
+            : task
+        ));
       }
     }
     setEditingId(null);
@@ -779,7 +780,7 @@ export default function DigitalGardenApp() {
         onDragLeave={handleDragLeave}
         onDrop={(e) => level === 0 && handleDrop(e, task.id)}
       >
-        <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 hover:shadow-sm transition-shadow opacity-100 filter-none">
+        <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 hover:shadow-sm transition-shadow opacity-100 filter-none">
           <div className="flex items-center gap-3 flex-1">
             {level === 0 && (
               <div className="text-gray-400 cursor-grab active:cursor-grabbing select-none">
@@ -807,7 +808,11 @@ export default function DigitalGardenApp() {
               />
             ) : (
               <span 
-                className="text-gray-800 dark:text-gray-200 font-medium cursor-pointer hover:text-emerald-700 dark:hover:text-emerald-400"
+                className={`font-medium cursor-pointer transition-all duration-200 ${
+                  task.status === 'done'
+                    ? 'text-gray-500 dark:text-gray-400 line-through'
+                    : 'text-gray-800 dark:text-gray-200 hover:text-emerald-700 dark:hover:text-emerald-400'
+                }`}
                 onClick={() => level === 0 ? startEditing(task) : startEditingSubtask(task, parentId!)}
               >
                 {task.title}
@@ -1751,7 +1756,15 @@ export default function DigitalGardenApp() {
               </div>
               
               <div className="space-y-3">
-                {tasks.map((task) => renderTask(task))}
+                {tasks
+                  .sort((a, b) => {
+                    // Sort by status: incomplete first, then completed
+                    if (a.status === 'done' && b.status !== 'done') return 1;
+                    if (a.status !== 'done' && b.status === 'done') return -1;
+                    // If same status, maintain original order
+                    return 0;
+                  })
+                  .map((task) => renderTask(task))}
               </div>
               
               {tasks.length === 0 && (
