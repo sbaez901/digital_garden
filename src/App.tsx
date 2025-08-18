@@ -99,17 +99,33 @@ export default function DigitalGardenApp() {
 
   // Save tasks to Firebase whenever they change
   useEffect(() => {
-    console.log("Task save effect triggered:", { currentUser: !!currentUser, tasksLength: tasks.length, userId: currentUser?.uid });
+    console.log("🔄 Task save effect triggered:", { 
+      currentUser: !!currentUser, 
+      tasksLength: tasks.length, 
+      userId: currentUser?.uid,
+      userEmail: currentUser?.email 
+    });
     
     if (currentUser && tasks.length >= 0) { // Changed from > 0 to >= 0 to save empty arrays too
       const saveTasksToFirebase = async () => {
         try {
-          console.log("Attempting to save tasks to Firebase...");
+          console.log("🚀 Starting Firebase save process...");
+          console.log("📊 Tasks to save:", tasks);
+          console.log("👤 User ID:", currentUser.uid);
+          
           const { saveTasks } = await import("./firebase");
+          console.log("📦 Firebase module imported successfully");
+          
           await saveTasks(currentUser.uid, tasks);
           console.log("✅ Tasks saved to Firebase successfully:", tasks.length);
-        } catch (error) {
+        } catch (error: any) {
           console.error("❌ Could not save tasks to Firebase:", error);
+          console.error("Error details:", {
+            name: error.name,
+            message: error.message,
+            code: error.code,
+            stack: error.stack
+          });
         }
       };
       
@@ -117,7 +133,11 @@ export default function DigitalGardenApp() {
       const timeoutId = setTimeout(saveTasksToFirebase, 1000);
       return () => clearTimeout(timeoutId);
     } else {
-      console.log("Not saving tasks:", { hasUser: !!currentUser, tasksLength: tasks.length });
+      console.log("⏸️ Not saving tasks:", { 
+        hasUser: !!currentUser, 
+        tasksLength: tasks.length,
+        userEmail: currentUser?.email 
+      });
     }
   }, [tasks, currentUser]);
 
