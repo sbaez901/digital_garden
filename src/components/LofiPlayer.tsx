@@ -241,7 +241,7 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
             <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium transition-colors duration-300">{currentSeason.charAt(0).toUpperCase() + currentSeason.slice(1)} Vibes</p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex justify-center gap-2">
           <button
             onClick={() => setShowPlaylist(!showPlaylist)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 hover:scale-105 ${
@@ -295,15 +295,15 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
 
                          {/* Ultra-Compact Track Info */}
       <div className="mb-2">
-        <div className="flex items-center gap-2 p-2.5 bg-gradient-to-r from-slate-50/90 to-gray-50/90 dark:from-slate-800/90 dark:to-gray-800/90 rounded-lg border border-slate-200/60 dark:border-slate-700/60 transition-colors duration-300">
+        <div className="flex items-center justify-center gap-2 p-2.5 bg-gradient-to-r from-slate-50/90 to-gray-50/90 dark:from-slate-800/90 dark:to-gray-800/90 rounded-lg border border-slate-200/60 dark:border-slate-700/60 transition-colors duration-300">
           <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
             <span className="text-white text-sm">🎼</span>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-gray-800 dark:text-gray-100 truncate transition-colors duration-300">
+          <div className="text-center">
+            <p className="text-xs font-semibold text-gray-800 dark:text-gray-100 transition-colors duration-300">
               {isLoading ? 'Loading...' : currentTrack.title}
             </p>
-            <p className="text-xs text-purple-600 dark:text-purple-400 truncate transition-colors duration-300">
+            <p className="text-xs text-purple-600 dark:text-purple-400 transition-colors duration-300">
               {isLoading ? '...' : currentTrack.artist}
             </p>
           </div>
