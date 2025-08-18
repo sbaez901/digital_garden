@@ -34,6 +34,13 @@
       const auth = getAuth(app);
       const db = getFirestore(app);
       
+      // Configure Auth persistence to LOCAL (default, but explicit for clarity)
+      // This ensures users stay signed in across browser sessions
+      import { setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+      setPersistence(auth, browserLocalPersistence).catch((error) => {
+        console.warn("Could not set auth persistence:", error);
+      });
+      
       // Make Firebase available globally for our app to use
       window.firebaseApp = app;
       window.firebaseAuth = auth;

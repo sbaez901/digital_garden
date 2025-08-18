@@ -63,15 +63,45 @@ export default function DigitalGardenApp() {
     return () => clearTimeout(timeoutId);
   }, []);
 
+  // Authentication persistence effect - listen for auth state changes
+  useEffect(() => {
+    const setupAuthListener = async () => {
+      try {
+        const { onAuthChange } = await import("./firebase");
+        
+        // Listen for authentication state changes
+        const unsubscribe = onAuthChange((user) => {
+          console.log("Auth state changed:", user ? user.email : "No user");
+          setCurrentUser(user);
+          
+          // If user is authenticated, load their tasks
+          if (user) {
+            loadUserTasks(user.uid);
+          } else {
+            // User signed out, clear tasks
+            setTasks([]);
+          }
+        });
+        
+        return unsubscribe;
+      } catch (error) {
+        console.warn("Could not setup auth listener:", error);
+      }
+    };
+    
+    setupAuthListener();
+  }, []);
+
   // Save tasks to Firebase whenever they change
   useEffect(() => {
-    if (currentUser && tasks.length > 0) {
+    if (currentUser && tasks.length >= 0) { // Changed from > 0 to >= 0 to save empty arrays too
       const saveTasksToFirebase = async () => {
         try {
           const { saveTasks } = await import("./firebase");
           await saveTasks(currentUser.uid, tasks);
+          console.log("Tasks saved to Firebase:", tasks.length);
         } catch (error) {
-          console.warn("Could not save tasks to Firebase");
+          console.warn("Could not save tasks to Firebase:", error);
         }
       };
       
@@ -80,6 +110,22 @@ export default function DigitalGardenApp() {
       return () => clearTimeout(timeoutId);
     }
   }, [tasks, currentUser]);
+
+  // Load user tasks from Firebase
+  const loadUserTasks = async (userId: string) => {
+    try {
+      setIsLoadingTasks(true);
+      const { loadTasks } = await import("./firebase");
+      const savedTasks = await loadTasks(userId);
+      setTasks(savedTasks);
+      console.log("User tasks loaded successfully:", savedTasks.length);
+    } catch (error) {
+      console.warn("Could not load user tasks:", error);
+      setTasks([]); // Start with empty tasks if loading fails
+    } finally {
+      setIsLoadingTasks(false);
+    }
+  };
 
   // Handle logout
   const handleLogout = async () => {
