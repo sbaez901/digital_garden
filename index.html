@@ -45,6 +45,12 @@
       window.firebaseApp = app;
       window.firebaseAuth = auth;
       window.firebaseDb = db;
+      
+      // Debug logging
+      console.log("🚀 Firebase initialized successfully");
+      console.log("📱 Auth instance:", auth);
+      console.log("🗄️ Firestore instance:", db);
+      console.log("🔑 Auth domain:", firebaseConfig.authDomain);
     </script>
     
     <script type="module" src="/src/main.jsx"></script>

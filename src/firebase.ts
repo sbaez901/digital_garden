@@ -119,13 +119,13 @@ export const onAuthChange = (callback: (user: any) => void) => {
   try {
     const { firebaseAuth } = getFirebaseInstances();
     
-    getFirebaseModules().then(({ auth }) => {
+    return getFirebaseModules().then(({ auth }) => {
       return auth.onAuthStateChanged(firebaseAuth, callback);
     });
   } catch (error) {
     console.warn('Firebase not initialized, using demo auth');
     callback(null);
-    return () => {};
+    return Promise.resolve(() => {});
   }
 };
 

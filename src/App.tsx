@@ -65,27 +65,32 @@ export default function DigitalGardenApp() {
 
   // Authentication persistence effect - listen for auth state changes
   useEffect(() => {
+    console.log("Setting up auth listener...");
+    
     const setupAuthListener = async () => {
       try {
         const { onAuthChange } = await import("./firebase");
         
         // Listen for authentication state changes
         const unsubscribe = onAuthChange((user) => {
-          console.log("Auth state changed:", user ? user.email : "No user");
+          console.log("🔥 Auth state changed:", user ? `User: ${user.email} (${user.uid})` : "No user");
           setCurrentUser(user);
           
           // If user is authenticated, load their tasks
           if (user) {
+            console.log("🔄 Loading tasks for user:", user.uid);
             loadUserTasks(user.uid);
           } else {
             // User signed out, clear tasks
+            console.log("🧹 Clearing tasks - user signed out");
             setTasks([]);
           }
         });
         
+        console.log("✅ Auth listener setup complete");
         return unsubscribe;
       } catch (error) {
-        console.warn("Could not setup auth listener:", error);
+        console.error("❌ Could not setup auth listener:", error);
       }
     };
     
@@ -94,20 +99,25 @@ export default function DigitalGardenApp() {
 
   // Save tasks to Firebase whenever they change
   useEffect(() => {
+    console.log("Task save effect triggered:", { currentUser: !!currentUser, tasksLength: tasks.length, userId: currentUser?.uid });
+    
     if (currentUser && tasks.length >= 0) { // Changed from > 0 to >= 0 to save empty arrays too
       const saveTasksToFirebase = async () => {
         try {
+          console.log("Attempting to save tasks to Firebase...");
           const { saveTasks } = await import("./firebase");
           await saveTasks(currentUser.uid, tasks);
-          console.log("Tasks saved to Firebase:", tasks.length);
+          console.log("✅ Tasks saved to Firebase successfully:", tasks.length);
         } catch (error) {
-          console.warn("Could not save tasks to Firebase:", error);
+          console.error("❌ Could not save tasks to Firebase:", error);
         }
       };
       
       // Debounce the save to avoid too many Firebase calls
       const timeoutId = setTimeout(saveTasksToFirebase, 1000);
       return () => clearTimeout(timeoutId);
+    } else {
+      console.log("Not saving tasks:", { hasUser: !!currentUser, tasksLength: tasks.length });
     }
   }, [tasks, currentUser]);
 
