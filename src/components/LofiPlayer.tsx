@@ -238,19 +238,20 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
           </div>
           <div>
             <h3 className="text-xs font-bold text-gray-800 dark:text-gray-100 tracking-wide transition-colors duration-300">MUSIC PLAYER</h3>
-            <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium transition-colors duration-300">{currentSeason.charAt(0).toUpperCase() + currentSeason.slice(1)} Vibes • {tracks.length} Tracks</p>
+            <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium transition-colors duration-300">{currentSeason.charAt(0).toUpperCase() + currentSeason.slice(1)} Vibes</p>
           </div>
         </div>
         <div className="flex gap-2">
           <button
             onClick={() => setShowPlaylist(!showPlaylist)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 hover:scale-105 ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 hover:scale-105 ${
               showPlaylist 
                 ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700 shadow-sm' 
                 : 'bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-800 hover:text-blue-700 dark:hover:text-blue-300'
             }`}
           >
-            {showPlaylist ? '📁 Playlist' : '🎵 Tracks'}
+            <span>{showPlaylist ? '📁' : '🎵'}</span>
+            <span>{showPlaylist ? 'Playlist' : 'Tracks'}</span>
           </button>
           <button
             onClick={() => {
@@ -277,7 +278,7 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
               }
             }}
             disabled={tracks.length === 0 || isLoading}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 hover:scale-105 ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 hover:scale-105 ${
               getCurrentTrackThumbnail() 
                 ? isLofiBackdropActive 
                                   ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700 shadow-sm' 
@@ -286,7 +287,8 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
             }`}
             title={getCurrentTrackThumbnail() ? `${isLofiBackdropActive ? 'Click to return to seasonal garden images' : 'Click to use this track as puzzle backdrop'}` : 'No thumbnail available'}
           >
-            {isLofiBackdropActive ? '🖼️ Active' : '🖼️ Puzzle'}
+            <span>{isLofiBackdropActive ? '🖼️' : '🖼️'}</span>
+            <span>{isLofiBackdropActive ? 'Active' : 'Puzzle'}</span>
           </button>
         </div>
       </div>

@@ -1027,8 +1027,8 @@ export default function DigitalGardenApp() {
           
           {/* Enhanced Season Selector - Mobile Optimized */}
           <div className="flex justify-center mb-3">
-            <div className="bg-gradient-to-r from-emerald-50 to-blue-50 dark:from-emerald-900/30 dark:to-blue-900/30 rounded-lg p-1 sm:p-1.5 border border-emerald-200/50 dark:border-emerald-700/50 shadow-sm w-full max-w-2xl">
-              <div className="flex justify-center gap-2 sm:gap-3">
+            <div className="bg-gradient-to-r from-emerald-50 to-blue-50 dark:from-emerald-900/30 dark:to-blue-900/30 rounded-lg p-1 sm:p-1.5 border border-emerald-200/50 dark:border-emerald-700/50 shadow-sm w-full max-w-xl">
+              <div className="flex justify-center gap-1.5 sm:gap-2">
                 {(['spring', 'summer', 'autumn', 'winter'] as const).map((season) => (
                   <button
                     key={season}
@@ -1036,7 +1036,7 @@ export default function DigitalGardenApp() {
                       setCurrentSeason(season);
                       setRevealedPieces(0); // Reset puzzle for new season
                     }}
-                    className={`flex items-center justify-center px-3 sm:px-4 py-1 sm:py-1.5 rounded-md text-xs font-medium transition-all duration-300 touch-manipulation ${
+                    className={`flex items-center justify-center px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-md text-xs font-medium transition-all duration-300 touch-manipulation ${
                       currentSeason === season
                         ? 'bg-white dark:bg-gray-600 text-gray-800 dark:text-gray-100 shadow-md transform scale-105 ring-1 ring-emerald-200 dark:ring-emerald-500'
                         : 'text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 hover:bg-white/60 dark:hover:bg-gray-600/60 hover:scale-105'
