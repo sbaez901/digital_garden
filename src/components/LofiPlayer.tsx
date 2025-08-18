@@ -229,25 +229,25 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
   }, [tracks.length, currentTrackIndex, isLofiBackdropActive, currentSeason, isLoading]);
 
   return (
-    <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm rounded-2xl p-3 shadow-lg dark:shadow-gray-900/50 border border-emerald-200/50 dark:border-emerald-700/50 hover:shadow-xl transition-all duration-300">
-      {/* Ultra-Compact Header */}
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <div className="w-9 h-9 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-lg flex items-center justify-center shadow-sm">
-            <span className="text-white text-sm">🎧</span>
+    <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-md rounded-3xl p-4 shadow-xl dark:shadow-gray-900/30 border border-white/20 dark:border-gray-700/30 hover:shadow-2xl transition-all duration-500">
+      {/* Sleek Modern Header */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 via-emerald-500 to-teal-500 rounded-2xl flex items-center justify-center shadow-lg">
+            <span className="text-white text-base">🎧</span>
           </div>
           <div>
-            <h3 className="text-xs font-bold text-gray-800 dark:text-gray-100 tracking-wide transition-colors duration-300">MUSIC PLAYER</h3>
+            <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100 tracking-wide transition-colors duration-300">MUSIC PLAYER</h3>
             <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium transition-colors duration-300">{currentSeason.charAt(0).toUpperCase() + currentSeason.slice(1)} Vibes</p>
           </div>
         </div>
-        <div className="flex justify-center gap-2">
+        <div className="flex gap-2">
           <button
             onClick={() => setShowPlaylist(!showPlaylist)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 hover:scale-105 ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-medium transition-all duration-300 hover:scale-105 ${
               showPlaylist 
-                ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700 shadow-sm' 
-                : 'bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-800 hover:text-blue-700 dark:hover:text-blue-300'
+                ? 'bg-emerald-500 text-white shadow-lg' 
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 hover:text-emerald-700 dark:hover:text-emerald-300'
             }`}
           >
             <span>{showPlaylist ? '📁' : '🎵'}</span>
@@ -278,11 +278,11 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
               }
             }}
             disabled={tracks.length === 0 || isLoading}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 hover:scale-105 ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-medium transition-all duration-300 hover:scale-105 ${
               getCurrentTrackThumbnail() 
                 ? isLofiBackdropActive 
-                                  ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700 shadow-sm' 
-                : 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-800 hover:text-purple-800 dark:hover:text-purple-200'
+                                  ? 'bg-emerald-500 text-white shadow-lg' 
+                : 'bg-purple-500 text-white shadow-lg hover:bg-purple-600'
                 : 'bg-gray-100 text-gray-400 cursor-not-allowed'
             }`}
             title={getCurrentTrackThumbnail() ? `${isLofiBackdropActive ? 'Click to return to seasonal garden images' : 'Click to use this track as puzzle backdrop'}` : 'No thumbnail available'}
@@ -293,14 +293,14 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
         </div>
       </div>
 
-                         {/* Ultra-Compact Track Info */}
-      <div className="mb-2">
-        <div className="flex items-center justify-center gap-2 p-2.5 bg-gradient-to-r from-slate-50/90 to-gray-50/90 dark:from-slate-800/90 dark:to-gray-800/90 rounded-lg border border-slate-200/60 dark:border-slate-700/60 transition-colors duration-300">
-          <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-            <span className="text-white text-sm">🎼</span>
+      {/* Sleek Track Info - No Box */}
+      <div className="mb-4 text-center">
+        <div className="flex items-center justify-center gap-3">
+          <div className="w-10 h-10 bg-gradient-to-br from-purple-500 via-pink-500 to-rose-500 rounded-2xl flex items-center justify-center shadow-lg">
+            <span className="text-white text-base">🎼</span>
           </div>
-          <div className="text-center">
-            <p className="text-xs font-semibold text-gray-800 dark:text-gray-100 transition-colors duration-300">
+          <div>
+            <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 transition-colors duration-300">
               {isLoading ? 'Loading...' : currentTrack.title}
             </p>
             <p className="text-xs text-purple-600 dark:text-purple-400 transition-colors duration-300">
@@ -322,40 +322,40 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
                />
              </div>
 
-      {/* Ultra-Compact Modern Controls */}
-      <div className="mb-2">
+      {/* Sleek Modern Controls */}
+      <div className="mb-4">
         {/* Main Controls Row */}
-        <div className="flex items-center justify-center gap-3 mb-2">
+        <div className="flex items-center justify-center gap-4 mb-4">
           {/* Previous */}
           <button
             onClick={previousTrack}
-            className="w-9 h-9 bg-blue-100 dark:bg-blue-900/50 hover:bg-blue-200 dark:hover:bg-blue-800 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-110"
+            className="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-500 hover:from-blue-500 hover:to-blue-600 text-white rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110"
           >
-            <span className="text-sm">⏮️</span>
+            <span className="text-base">⏮️</span>
           </button>
           
           {/* Play/Pause */}
           <button
             onClick={isPlaying ? pauseTrack : playTrack}
-            className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-emerald-600 text-white rounded-xl flex items-center justify-center shadow-md hover:shadow-lg transition-all duration-200 hover:scale-110"
+            className="w-16 h-16 bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-500 text-white rounded-3xl flex items-center justify-center shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-110"
           >
-            <span className="text-lg">{isPlaying ? '⏸️' : '▶️'}</span>
+            <span className="text-xl">{isPlaying ? '⏸️' : '▶️'}</span>
           </button>
           
           {/* Next */}
           <button
             onClick={nextTrack}
-            className="w-9 h-9 bg-blue-100 dark:bg-blue-900/50 hover:bg-blue-200 dark:hover:bg-blue-800 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-110"
+            className="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-500 hover:from-blue-500 hover:to-blue-600 text-white rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110"
           >
-            <span className="text-sm">⏭️</span>
+            <span className="text-base">⏭️</span>
           </button>
         </div>
         
         {/* Volume Row */}
-        <div className="flex items-center gap-3 justify-center">
+        <div className="flex items-center gap-4 justify-center">
           <button
             onClick={toggleMute}
-            className="w-7 h-7 bg-orange-100 dark:bg-orange-900/50 hover:bg-orange-200 dark:hover:bg-orange-800 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-110"
+            className="w-10 h-10 bg-gradient-to-br from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110"
           >
             <span className="text-sm">{isMuted ? '🔇' : '🔊'}</span>
           </button>
@@ -366,7 +366,7 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
             step="0.1"
             value={isMuted ? 0 : volume}
             onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
-            className="w-16 h-1.5 bg-gray-200 rounded-full appearance-none cursor-pointer hover:bg-emerald-100 transition-colors"
+            className="w-20 h-2 bg-gray-200 rounded-full appearance-none cursor-pointer hover:bg-emerald-100 transition-colors"
             style={{
               background: `linear-gradient(to right, #10b981 0%, #10b981 ${(isMuted ? 0 : volume) * 100}%, #e5e7eb ${(isMuted ? 0 : volume) * 100}%, #e5e7eb 100%)`
             }}
@@ -374,24 +374,24 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
         </div>
       </div>
 
-                   {/* Ultra-Compact Playlist */}
+                   {/* Sleek Playlist */}
              {showPlaylist && (
-               <div className="border-t border-emerald-100 dark:border-emerald-700 pt-1.5 transition-colors duration-300">
-                 <h4 className="font-medium text-emerald-800 dark:text-emerald-200 mb-1.5 text-xs flex items-center gap-1 transition-colors duration-300">
+               <div className="border-t border-gray-200/30 dark:border-gray-600/30 pt-3 transition-colors duration-300">
+                 <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-3 text-sm flex items-center gap-2 transition-colors duration-300 justify-center">
                    <span>📁</span> Tracks
                  </h4>
-                 <div className="space-y-0.5 max-h-16 overflow-y-auto">
+                 <div className="space-y-2 max-h-20 overflow-y-auto">
                    {isLoading ? (
-                     <div className="text-xs text-gray-500 dark:text-gray-400 text-center py-1.5 bg-gray-50 dark:bg-gray-700 rounded-md transition-colors duration-300">🔄 Loading...</div>
+                     <div className="text-xs text-gray-500 dark:text-gray-400 text-center py-2 bg-gray-50/50 dark:bg-gray-700/50 rounded-xl transition-colors duration-300">🔄 Loading...</div>
                    ) : (
                      tracks.map((track, index) => (
                        <div
                          key={track.id}
                          onClick={() => setCurrentTrackIndex(index)}
-                         className={`flex items-center gap-2 p-1 rounded-md cursor-pointer transition-all duration-200 text-xs ${
+                         className={`flex items-center gap-3 p-2 rounded-xl cursor-pointer transition-all duration-300 text-xs ${
                            index === currentTrackIndex
-                             ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-200'
-                             : 'hover:bg-emerald-50 dark:hover:bg-emerald-900/30'
+                             ? 'bg-emerald-500 text-white shadow-lg'
+                             : 'hover:bg-gray-100 dark:hover:bg-gray-700/50'
                          }`}
                        >
                          <span className="text-xs">🎵</span>
@@ -399,7 +399,7 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
                            <p className="font-medium truncate text-xs transition-colors duration-300">{track.title}</p>
                          </div>
                          {index === currentTrackIndex && (
-                           <span className="text-emerald-600 dark:text-emerald-400 text-xs transition-colors duration-300">▶️</span>
+                           <span className="text-white text-xs transition-colors duration-300">▶️</span>
                          )}
                        </div>
                      ))
@@ -408,8 +408,8 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
                </div>
              )}
 
-                   {/* Ultra-Compact Status */}
-             <div className="text-xs text-center text-emerald-600 dark:text-emerald-400 mt-1.5 py-1 bg-emerald-50/50 dark:bg-emerald-900/30 rounded-md border border-emerald-100/30 dark:border-emerald-700/30 font-medium transition-colors duration-300">
+                   {/* Sleek Status */}
+             <div className="text-xs text-center text-emerald-600 dark:text-emerald-400 mt-3 py-2 bg-emerald-500/10 dark:bg-emerald-500/20 rounded-2xl font-medium transition-colors duration-300">
                {isLoading ? '🔄 Loading' : (isPlaying ? '🎵 Playing' : '⏸️ Paused')}
              </div>
     </div>
