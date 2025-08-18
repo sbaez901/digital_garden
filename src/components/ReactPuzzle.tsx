@@ -78,9 +78,6 @@ export default function ReactPuzzle({
   return (
     <div className="w-full h-full relative">
       {/* Debug info */}
-      <div className="absolute top-2 left-2 bg-black/50 text-white text-xs p-2 rounded z-10">
-        Simple Grid Puzzle: {piecesToShow}/{totalPieces} pieces revealed
-      </div>
       
       {/* Background overlay to hide unrevealed pieces */}
       <div 
