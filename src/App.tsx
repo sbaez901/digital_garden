@@ -1236,9 +1236,9 @@ export default function DigitalGardenApp() {
                   <div className="text-lg font-bold text-blue-700 dark:text-blue-300">{seasonalGardens[currentSeason].pieces}</div>
                   <div className="text-xs text-blue-600 dark:text-blue-400">Total</div>
                 </div>
-                <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/30 dark:to-orange-900/30 rounded-lg p-3 text-center transform hover:scale-105 transition-all duration-300 shadow-sm border border-amber-100/50 dark:border-amber-700/50">
-                  <div className="text-2xl font-bold text-amber-700 dark:text-amber-300 mb-0.5">{Math.round((revealedPieces / seasonalGardens[currentSeason].pieces) * 100)}%</div>
-                  <div className="text-xs text-amber-600 dark:text-amber-400 font-medium">Complete</div>
+                <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/30 dark:to-orange-900/30 rounded-lg p-2 text-center transform hover:scale-105 transition-all duration-300 shadow-sm border border-amber-100/50 dark:border-amber-700/50">
+                  <div className="text-lg font-bold text-amber-700 dark:text-amber-300">{Math.round((revealedPieces / seasonalGardens[currentSeason].pieces) * 100)}%</div>
+                  <div className="text-xs text-amber-600 dark:text-amber-400">Complete</div>
                 </div>
               </div>
               
