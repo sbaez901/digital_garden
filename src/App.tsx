@@ -39,13 +39,10 @@ export default function DigitalGardenApp() {
   // Dark mode effect
   useEffect(() => {
     localStorage.setItem('darkMode', JSON.stringify(isDarkMode));
-    console.log('🌙 Dark mode changed:', isDarkMode);
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
-      console.log('✅ Added dark class to document');
     } else {
       document.documentElement.classList.remove('dark');
-      console.log('✅ Removed dark class from document');
     }
   }, [isDarkMode]);
 
