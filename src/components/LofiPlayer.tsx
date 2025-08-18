@@ -272,7 +272,7 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
               }
             }}
             disabled={tracks.length === 0 || isLoading}
-            className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 hover:scale-105 ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 hover:scale-105 ${
               getCurrentTrackThumbnail() 
                 ? isLofiBackdropActive 
                                   ? 'bg-emerald-500 text-white shadow-sm' 
@@ -281,7 +281,10 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
             }`}
             title={getCurrentTrackThumbnail() ? `${isLofiBackdropActive ? 'Click to return to seasonal garden images' : 'Click to use this track as puzzle backdrop'}` : 'No thumbnail available'}
           >
-            🖼️
+            <span className="flex items-center gap-1.5">
+              <span>🖼️</span>
+              <span>Puzzle</span>
+            </span>
           </button>
         </div>
       </div>
