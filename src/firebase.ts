@@ -21,14 +21,14 @@ const preloadFirebaseModules = async () => {
   
   try {
     console.log('Preloading Firebase modules...');
-    const [authModule, firestoreModule] = await Promise.all([
+    const [authModule, databaseModule] = await Promise.all([
       import('https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js'),
-      import('https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js')
+      import('https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js')
     ]);
     
     firebaseModules = {
       auth: authModule,
-      firestore: firestoreModule
+      database: databaseModule
     };
     
     // Cache globally for debugging
@@ -57,10 +57,10 @@ const getFirebaseInstances = () => {
   return { firebaseApp: window.firebaseApp, firebaseAuth: window.firebaseAuth };
 };
 
-// Get Firestore instance
-const getFirestoreInstance = () => {
+// Get Realtime Database instance
+const getDatabaseInstance = () => {
   if (!window.firebaseDb) {
-    throw new Error('Firestore not initialized. Please refresh the page.');
+    throw new Error('Realtime Database not initialized. Please refresh the page.');
   }
   return window.firebaseDb;
 };
@@ -134,31 +134,30 @@ export const saveTasks = async (userId: string, tasks: any[]) => {
   try {
     console.log('🔄 Attempting to save tasks for user:', userId, 'Tasks count:', tasks.length);
     
-    const db = getFirestoreInstance();
-    const { firestore } = await getFirebaseModules();
+    const db = getDatabaseInstance();
+    const { database } = await getFirebaseModules();
     
-    const userDocRef = firestore.doc(db, 'users', userId);
-    await firestore.setDoc(userDocRef, {
+    const userRef = database.ref(db, `users/${userId}`);
+    await database.set(userRef, {
       tasks: tasks,
       lastUpdated: new Date().toISOString()
     });
-    console.log('✅ Tasks saved to Firestore successfully');
+    console.log('✅ Tasks saved to Realtime Database successfully');
   } catch (error: any) {
-    console.error('❌ Failed to save tasks to Firestore:', error);
+    console.error('❌ Failed to save tasks to Realtime Database:', error);
     console.error('Error details:', {
       code: error.code,
       message: error.message,
       stack: error.stack
     });
     
-    // Check for specific Firestore errors
-    if (error.code === 'permission-denied') {
-      console.error('🔒 Permission denied - check Firestore security rules');
+    // Check for specific database errors
+    if (error.code === 'PERMISSION_DENIED') {
+      console.error('🔒 Permission denied - check database security rules');
       throw new Error('Permission denied. Please check your Firebase configuration.');
-    } else if (error.code === 'unavailable') {
-      console.error('🌐 Firestore service unavailable - retrying...');
-      // Could implement retry logic here
-      throw new Error('Firestore service temporarily unavailable. Please try again.');
+    } else if (error.code === 'UNAVAILABLE') {
+      console.error('🌐 Database service unavailable - retrying...');
+      throw new Error('Database service temporarily unavailable. Please try again.');
     } else {
       throw new Error(`Failed to save tasks: ${error.message}`);
     }
@@ -169,22 +168,22 @@ export const loadTasks = async (userId: string) => {
   try {
     console.log('🔄 Attempting to load tasks for user:', userId);
     
-    const db = getFirestoreInstance();
-    const { firestore } = await getFirebaseModules();
+    const db = getDatabaseInstance();
+    const { database } = await getFirebaseModules();
     
-    const userDocRef = firestore.doc(db, 'users', userId);
-    const userDoc = await firestore.getDoc(userDocRef);
+    const userRef = database.ref(db, `users/${userId}`);
+    const snapshot = await database.get(userRef);
     
-    if (userDoc.exists()) {
-      const userData = userDoc.data();
-      console.log('✅ Tasks loaded from Firestore successfully:', userData.tasks?.length || 0);
+    if (snapshot.exists()) {
+      const userData = snapshot.val();
+      console.log('✅ Tasks loaded from Realtime Database successfully:', userData.tasks?.length || 0);
       return userData.tasks || [];
     } else {
       console.log('📝 No existing tasks found, starting fresh');
       return [];
     }
   } catch (error: any) {
-    console.error('❌ Failed to load tasks from Firestore:', error);
+    console.error('❌ Failed to load tasks from Realtime Database:', error);
     console.error('Error details:', {
       code: error.code,
       message: error.message,
