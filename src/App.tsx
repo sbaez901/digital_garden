@@ -469,7 +469,7 @@ export default function DigitalGardenApp() {
       case 'evening':
         return {
           bgGradient: 'from-orange-100 to-pink-100',
-          textColor: 'text-orange-800',
+          textColor: 'text-emerald-700',
           icon: '🌆',
           message: 'Good evening! Your garden is glowing with sunset colors.'
         };
@@ -859,7 +859,7 @@ export default function DigitalGardenApp() {
 
   const renderTask = (task: Task, level: number = 0, parentId?: string) => {
     const isExpanded = expandedTasks.has(task.id);
-    const hasSubtasks = task.subtasks.length > 0;
+    const hasSubtasks = task.subtasks && Array.isArray(task.subtasks) && task.subtasks.length > 0;
     
     return (
       <div 
@@ -914,7 +914,7 @@ export default function DigitalGardenApp() {
             
             {hasSubtasks && (
               <span className="text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/50 px-2 py-1 rounded-full">
-                {task.subtasks.length} subtask{task.subtasks.length !== 1 ? 's' : ''}
+                {task.subtasks && Array.isArray(task.subtasks) ? task.subtasks.length : 0} subtask{(task.subtasks && Array.isArray(task.subtasks) ? task.subtasks.length : 0) !== 1 ? 's' : ''}
               </span>
             )}
             
