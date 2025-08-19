@@ -23,11 +23,10 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
   const [isMuted, setIsMuted] = useState(false);
   const [tracks, setTracks] = useState<Track[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(100);
+
   
-  // YouTube iframe ref
-  const playerRef = useRef<HTMLIFrameElement>(null);
+  // Audio element ref
+  const playerRef = useRef<HTMLAudioElement>(null);
   
   // YouTube API Key
   const API_KEY = 'AIzaSyB_sa4FBPqt8_lbDtcqJeIVvN8kNFray-c';
@@ -172,15 +171,28 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
     return null;
   };
 
-  // YouTube player functions
+  // Audio player functions
   const playTrack = () => {
-    setIsPlaying(true);
-    // YouTube iframe will handle the actual playback
+    if (playerRef.current) {
+      playerRef.current.play().then(() => {
+        setIsPlaying(true);
+        console.log('🎵 Audio playback started');
+      }).catch((error) => {
+        console.error('🎵 Error playing audio:', error);
+        // Fallback: just update state for visual feedback
+        setIsPlaying(true);
+      });
+    } else {
+      setIsPlaying(true);
+    }
   };
 
   const pauseTrack = () => {
+    if (playerRef.current) {
+      playerRef.current.pause();
+    }
     setIsPlaying(false);
-    // YouTube iframe will handle the actual pause
+    console.log('🎵 Audio playback paused');
   };
 
   // Auto-advance to next track when current one finishes
@@ -229,33 +241,8 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
     fetchLofiTracks(currentSeason);
   }, [currentSeason]);
 
-  // Listen for YouTube video end events and auto-advance
+  // Auto-advance timer for fallback (in case audio events don't work)
   useEffect(() => {
-    const handleVideoEnd = () => {
-      if (isPlaying) {
-        console.log('🎵 Video ended, auto-advancing to next track');
-        advanceToNextTrack();
-      }
-    };
-
-    // Listen for YouTube iframe messages
-    const handleMessage = (event: MessageEvent) => {
-      if (event.origin !== 'https://www.youtube.com') return;
-      
-      try {
-        const data = JSON.parse(event.data);
-        if (data.event === 'onStateChange') {
-          // YouTube state: 0 = ended, 1 = playing, 2 = paused, 3 = buffering, 5 = cued
-          if (data.info === 0) {
-            handleVideoEnd();
-          }
-        }
-      } catch (error) {
-        // Ignore parsing errors from non-JSON messages
-      }
-    };
-
-    // Fallback: Timer-based auto-advance (every 3 minutes as most lofi tracks are ~3-5 min)
     let autoAdvanceTimer: NodeJS.Timeout;
     if (isPlaying && tracks.length > 0) {
       autoAdvanceTimer = setTimeout(() => {
@@ -265,11 +252,8 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
         }
       }, 3 * 60 * 1000); // 3 minutes
     }
-
-    window.addEventListener('message', handleMessage);
     
     return () => {
-      window.removeEventListener('message', handleMessage);
       if (autoAdvanceTimer) {
         clearTimeout(autoAdvanceTimer);
       }
@@ -360,17 +344,19 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
         </div>
       </div>
 
-                   {/* YouTube Player (Hidden) */}
-             <div className="hidden">
-               <iframe
-                 ref={playerRef}
-                 width="0"
-                 height="0"
-                 src={`https://www.youtube.com/embed/${currentTrack.videoId}?autoplay=${isPlaying ? 1 : 0}&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&cc_load_policy=0&fs=0&loop=1&playlist=${currentTrack.videoId}&mute=${isMuted ? 1 : 0}`}
-                 title="Lofi Music Player"
-                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-               />
-             </div>
+                   {/* Mobile-Friendly Audio Player */}
+                   <audio
+                     ref={playerRef as any}
+                     src={`https://www.youtube.com/watch?v=${currentTrack.videoId}`}
+                     preload="none"
+                     onEnded={() => {
+                       if (isPlaying) {
+                         console.log('🎵 Audio ended, auto-advancing to next track');
+                         advanceToNextTrack();
+                       }
+                     }}
+                     style={{ display: 'none' }}
+                   />
 
       {/* Clean Organized Controls */}
       <div className="mb-3">
@@ -427,29 +413,7 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
         </div>
       </div>
 
-                   {/* Clean Progress Bar */}
-                   <div className="mb-2">
-                     <div className="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                       <div 
-                         className="h-full bg-emerald-500 transition-all duration-300"
-                         style={{ width: `${(currentTime / duration) * 100}%` }}
-                       ></div>
-                     </div>
-                   </div>
 
-
-
-                   {/* Clean Status */}
-                   <div className="text-xs text-center text-emerald-600 dark:text-emerald-400 py-1.5">
-                     {isLoading ? '🔄 Loading' : (
-                       isPlaying ? (
-                         <>
-                           🎵 Playing
-                           <span className="ml-1 text-xs opacity-75">• Auto-advance</span>
-                         </>
-                       ) : '⏸️ Paused'
-                     )}
-                   </div>
     </div>
   );
 };
