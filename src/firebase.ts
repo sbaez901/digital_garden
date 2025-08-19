@@ -142,15 +142,26 @@ export const saveTasks = async (userId: string, tasks: any[]) => {
       tasks: tasks,
       lastUpdated: new Date().toISOString()
     });
-    console.log('✅ Tasks saved to Firebase successfully');
+    console.log('✅ Tasks saved to Firestore successfully');
   } catch (error: any) {
-    console.error('❌ Failed to save tasks to Firebase:', error);
+    console.error('❌ Failed to save tasks to Firestore:', error);
     console.error('Error details:', {
       code: error.code,
       message: error.message,
       stack: error.stack
     });
-    throw new Error(`Failed to save tasks: ${error.message}`);
+    
+    // Check for specific Firestore errors
+    if (error.code === 'permission-denied') {
+      console.error('🔒 Permission denied - check Firestore security rules');
+      throw new Error('Permission denied. Please check your Firebase configuration.');
+    } else if (error.code === 'unavailable') {
+      console.error('🌐 Firestore service unavailable - retrying...');
+      // Could implement retry logic here
+      throw new Error('Firestore service temporarily unavailable. Please try again.');
+    } else {
+      throw new Error(`Failed to save tasks: ${error.message}`);
+    }
   }
 };
 
@@ -166,14 +177,14 @@ export const loadTasks = async (userId: string) => {
     
     if (userDoc.exists()) {
       const userData = userDoc.data();
-      console.log('✅ Tasks loaded from Firebase successfully:', userData.tasks?.length || 0);
+      console.log('✅ Tasks loaded from Firestore successfully:', userData.tasks?.length || 0);
       return userData.tasks || [];
     } else {
       console.log('📝 No existing tasks found, starting fresh');
       return [];
     }
   } catch (error: any) {
-    console.error('❌ Failed to load tasks from Firebase:', error);
+    console.error('❌ Failed to load tasks from Firestore:', error);
     console.error('Error details:', {
       code: error.code,
       message: error.message,
