@@ -873,16 +873,29 @@ export default function DigitalGardenApp() {
         onDragLeave={handleDragLeave}
         onDrop={(e) => level === 0 && handleDrop(e, task.id)}
       >
-        <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 hover:shadow-sm transition-shadow opacity-100 filter-none">
+        <div 
+          className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 hover:shadow-sm transition-shadow opacity-100 filter-none cursor-pointer"
+          onClick={() => {
+            if (editingId !== task.id) {
+              level === 0 ? startEditing(task) : startEditingSubtask(task, parentId!)
+            }
+          }}
+        >
           <div className="flex items-center gap-3 flex-1">
             {level === 0 && (
-              <div className="text-gray-400 cursor-grab active:cursor-grabbing select-none">
+              <div 
+                className="text-gray-400 cursor-grab active:cursor-grabbing select-none"
+                onClick={(e) => e.stopPropagation()}
+              >
                 ⋮⋮
               </div>
             )}
             {hasSubtasks && (
               <button
-                onClick={() => toggleExpanded(task.id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleExpanded(task.id);
+                }}
                 className="text-emerald-600 hover:text-emerald-800 transition-colors"
               >
                 {isExpanded ? '▼' : '▶'}
@@ -895,7 +908,7 @@ export default function DigitalGardenApp() {
                 value={editingTitle}
                 onChange={(e) => setEditingTitle(e.target.value)}
                 onBlur={saveEdit}
-                onKeyPress={(e) => e.key === 'Enter' && saveEdit()}
+                onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
                 className="flex-1 px-3 py-2 border border-emerald-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-400 mr-2"
                 autoFocus
               />
@@ -928,7 +941,10 @@ export default function DigitalGardenApp() {
           
           <div className="flex items-center gap-2">
             <button
-              onClick={() => toggleStatus(task.id, parentId)}
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleStatus(task.id, parentId);
+              }}
               className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all duration-200 cursor-pointer ${
                 task.status === 'done'
                   ? 'bg-green-500 border-green-500 text-white'
@@ -945,7 +961,10 @@ export default function DigitalGardenApp() {
             
             {level === 0 && (
               <button
-                onClick={() => addSubtask(task.id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  addSubtask(task.id);
+                }}
                 className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 px-2 py-1 rounded hover:bg-emerald-50 dark:hover:bg-emerald-900/50 transition-colors"
                 title="Add subtask"
               >
@@ -954,8 +973,11 @@ export default function DigitalGardenApp() {
             )}
             
             <button
-              onClick={() => deleteTask(task.id, parentId)}
-              className="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 px-2 py-1 rounded hover:bg-red-50 dark:hover:bg-red-900/50 transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                deleteTask(task.id, parentId);
+              }}
+              className="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 px-2 py-1 rounded hover:bg-red-50 dark:hover:text-red-900/50 transition-colors"
             >
               ×
             </button>
