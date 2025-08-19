@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Firebase Test</title>
+</head>
+<body>
+    <h1>Firebase Realtime Database Test</h1>
+    <div id="status">Testing connection...</div>
+    <button onclick="testConnection()">Test Connection</button>
+    <div id="result"></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+        import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBjaLi6_brDQqQ198cPgV30ITltdNLQBGg",
+            authDomain: "task-garden-38324.firebaseapp.com",
+            projectId: "task-garden-38324",
+            storageBucket: "task-garden-38324.firebasestorage.app",
+            messagingSenderId: "744010796330",
+            appId: "1:744010796330:web:a14362b3ec3117e80c6253",
+            databaseURL: "https://task-garden-38324-default-rtdb.firebaseio.com"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        window.testConnection = async function() {
+            const statusDiv = document.getElementById('status');
+            const resultDiv = document.getElementById('result');
+            
+            try {
+                statusDiv.textContent = 'Testing write...';
+                
+                // Test write
+                const testRef = ref(db, 'test/connection');
+                await set(testRef, {
+                    timestamp: new Date().toISOString(),
+                    message: 'Test connection successful'
+                });
+                
+                statusDiv.textContent = 'Testing read...';
+                
+                // Test read
+                const snapshot = await get(testRef);
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    resultDiv.innerHTML = `
+                        <h3>✅ Connection Successful!</h3>
+                        <p>Database URL: ${firebaseConfig.databaseURL}</p>
+                        <p>Test data: ${JSON.stringify(data, null, 2)}</p>
+                    `;
+                    statusDiv.textContent = 'Connection test completed successfully!';
+                } else {
+                    resultDiv.innerHTML = '<h3>❌ Read failed - no data found</h3>';
+                    statusDiv.textContent = 'Write succeeded but read failed';
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <h3>❌ Connection Failed</h3>
+                    <p><strong>Error:</strong> ${error.message}</p>
+                    <p><strong>Code:</strong> ${error.code || 'Unknown'}</p>
+                    <p><strong>Database URL:</strong> ${firebaseConfig.databaseURL}</p>
+                    <hr>
+                    <h4>To fix this:</h4>
+                    <ol>
+                        <li>Go to <a href="https://console.firebase.google.com/" target="_blank">Firebase Console</a></li>
+                        <li>Select project: <strong>task-garden-38324</strong></li>
+                        <li>Click "Realtime Database" in left sidebar</li>
+                        <li>Click "Create Database"</li>
+                        <li>Choose location (US Central 1 recommended)</li>
+                        <li>Start in "test mode" for now</li>
+                    </ol>
+                `;
+                statusDiv.textContent = 'Connection test failed - see details below';
+            }
+        };
+
+        // Auto-test on load
+        testConnection();
+    </script>
+</body>
+</html>

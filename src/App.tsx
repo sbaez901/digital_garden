@@ -147,8 +147,25 @@ export default function DigitalGardenApp() {
       setIsLoadingTasks(true);
       const { loadTasks } = await import("./firebase");
       const savedTasks = await loadTasks(userId);
-      setTasks(savedTasks);
-      console.log("User tasks loaded successfully:", savedTasks.length);
+      
+      // Add safety checks for loaded data
+      if (savedTasks && Array.isArray(savedTasks)) {
+        // Validate each task has required properties
+        const validatedTasks = savedTasks.filter(task => 
+          task && 
+          typeof task === 'object' && 
+          task.id && 
+          task.title && 
+          task.status && 
+          Array.isArray(task.subtasks)
+        );
+        
+        setTasks(validatedTasks);
+        console.log("User tasks loaded successfully:", validatedTasks.length);
+      } else {
+        console.warn("Invalid task data received, starting fresh");
+        setTasks([]);
+      }
     } catch (error) {
       console.warn("Could not load user tasks:", error);
       setTasks([]); // Start with empty tasks if loading fails
@@ -1149,7 +1166,7 @@ export default function DigitalGardenApp() {
               {/* Total Tasks Completed */}
               <div className="text-center p-1.5 sm:p-1.5 bg-white/80 dark:bg-gray-700/80 rounded border border-emerald-200/50 dark:border-emerald-600/50">
                 <div className="text-sm font-bold text-emerald-700 dark:text-emerald-300">
-                  {tasks.filter(task => task.status === 'done').length}
+                  {tasks && Array.isArray(tasks) ? tasks.filter(task => task && task.status === 'done').length : 0}
                 </div>
                 <div className="text-xs text-emerald-600 dark:text-emerald-400">Tasks</div>
               </div>
@@ -1157,15 +1174,20 @@ export default function DigitalGardenApp() {
               {/* Total Subtasks Completed */}
               <div className="text-center p-1.5 sm:p-1.5 bg-white/80 dark:bg-gray-700/80 rounded border border-blue-200/50 dark:border-blue-600/50">
                 <div className="text-sm font-bold text-blue-700 dark:text-blue-300">
-                  {tasks.reduce((total, task) => total + task.subtasks.filter(st => st.status === 'done').length, 0)}
+                  {tasks && Array.isArray(tasks) ? tasks.reduce((total, task) => {
+                    if (task && task.subtasks && Array.isArray(task.subtasks)) {
+                      return total + task.subtasks.filter(st => st && st.status === 'done').length;
+                    }
+                    return total;
+                  }, 0) : 0}
                 </div>
                 <div className="text-xs text-blue-600 dark:text-blue-400">Subtasks</div>
               </div>
               
               {/* Total Pomodoros */}
               <div className="text-center p-1.5 sm:p-1.5 bg-white/80 dark:bg-gray-700/80 rounded border border-amber-200/50 dark:border-amber-600/50">
-                <div className="text-sm font-bold text-amber-700 dark:text-amber-300">
-                  {tasks.reduce((total, task) => total + (task.pomodoros || 0), 0)}
+                <div className="text-sm font-bold text-amber-700 dark:text-emerald-300">
+                  {tasks && Array.isArray(tasks) ? tasks.reduce((total, task) => total + (task && task.pomodoros ? task.pomodoros : 0), 0) : 0}
                 </div>
                 <div className="text-xs text-amber-600 dark:text-amber-400">Pomodoros</div>
               </div>
@@ -1832,15 +1854,22 @@ export default function DigitalGardenApp() {
               </div>
               
               <div className="space-y-3">
-                {tasks
-                  .sort((a, b) => {
-                    // Sort by status: incomplete first, then completed
-                    if (a.status === 'done' && b.status !== 'done') return 1;
-                    if (a.status !== 'done' && b.status === 'done') return -1;
-                    // If same status, maintain original order
-                    return 0;
-                  })
-                  .map((task) => renderTask(task))}
+                {tasks && Array.isArray(tasks) && tasks.length > 0 ? (
+                  tasks
+                    .filter(task => task && task.id && task.title) // Additional safety filter
+                    .sort((a, b) => {
+                      // Sort by status: incomplete first, then completed
+                      if (a.status === 'done' && b.status !== 'done') return 1;
+                      if (a.status !== 'done' && b.status === 'done') return -1;
+                      // If same status, maintain original order
+                      return 0;
+                    })
+                    .map((task) => renderTask(task))
+                ) : (
+                  <div className="text-center py-6 text-gray-500 dark:text-gray-400">
+                    <p className="text-base">No tasks yet! Click "Add Task" to start growing your garden.</p>
+                  </div>
+                )}
               </div>
               
               {tasks.length === 0 && (
