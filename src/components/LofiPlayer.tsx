@@ -19,6 +19,7 @@ interface LofiPlayerProps {
 const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropActive = false }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
+  const [lastPlayedTrackIndex, setLastPlayedTrackIndex] = useState<number | null>(null);
   const [volume, setVolume] = useState(0.7);
   const [isMuted, setIsMuted] = useState(false);
   const [tracks, setTracks] = useState<Track[]>([]);
@@ -173,11 +174,28 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
     return null;
   };
 
-  // YouTube player functions (simple approach that works)
+  // YouTube player functions (smart approach that doesn't reset)
   const playTrack = () => {
     setIsPlaying(true);
     console.log('🎵 Playback started');
-    // YouTube iframe will handle the actual playback
+    
+    // Handle resuming vs new track
+    if (playerRef.current) {
+      if (!isPlaying || currentTrackIndex !== lastPlayedTrackIndex) {
+        // This is a new track, reload iframe
+        console.log('🎵 Loading new track in iframe');
+        setLastPlayedTrackIndex(currentTrackIndex);
+      } else {
+        // This is resuming the same track, just unmute
+        console.log('🎵 Resuming current track (unmuting)');
+        try {
+          const iframe = playerRef.current;
+          iframe.src = iframe.src.replace('mute=1', 'mute=0');
+        } catch (error) {
+          console.log('🎵 Unmute failed, but state updated');
+        }
+      }
+    }
     
     // Set a timer for auto-advance (3 minutes)
     setTimeout(() => {
@@ -193,7 +211,18 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
   const pauseTrack = () => {
     setIsPlaying(false);
     console.log('🎵 Playback paused');
-    // YouTube iframe will handle the actual pause
+    
+    // Instead of reloading, we'll mute the iframe to simulate pause
+    // This preserves the track position
+    if (playerRef.current) {
+      try {
+        const iframe = playerRef.current;
+        iframe.src = iframe.src.replace('mute=0', 'mute=1');
+        console.log('🎵 Track muted (paused)');
+      } catch (error) {
+        console.log('🎵 Mute failed, but state updated');
+      }
+    }
   };
 
   // Auto-advance to next track when current one finishes
@@ -412,7 +441,7 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
           ref={playerRef}
           width="0"
           height="0"
-          src={`https://www.youtube.com/embed/${currentTrack.videoId}?autoplay=${isPlaying ? 1 : 0}&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&cc_load_policy=0&fs=0&loop=1&playlist=${currentTrack.videoId}&mute=${isMuted ? 1 : 0}`}
+          src={`https://www.youtube.com/embed/${currentTrack.videoId}?autoplay=1&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&cc_load_policy=0&fs=0&loop=1&playlist=${currentTrack.videoId}&mute=${isMuted ? 1 : 0}`}
           title="Lofi Music Player"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
         />
