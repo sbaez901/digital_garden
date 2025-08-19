@@ -178,12 +178,8 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
     setIsPlaying(true);
     console.log('🎵 Playback started');
     
-    // Try to play actual audio if possible
-    if (playerRef.current) {
-      playerRef.current.play().catch((error) => {
-        console.log('🎵 Audio playback not supported, using visual mode');
-      });
-    }
+    // Generate audio tone immediately for mobile compatibility
+    generateAudioTone();
     
     // Set a timer for auto-advance (3 minutes)
     setTimeout(() => {
@@ -192,6 +188,41 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
         advanceToNextTrack();
       }
     }, 3 * 60 * 1000);
+  };
+
+  // Generate audio tone function
+  const generateAudioTone = () => {
+    try {
+      // Create audio context (required for mobile)
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      
+      // Resume context if suspended (mobile requirement)
+      if (audioContext.state === 'suspended') {
+        audioContext.resume();
+      }
+      
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      // Create a pleasant lofi-like tone
+      oscillator.frequency.setValueAtTime(220 + (currentTrackIndex * 30), audioContext.currentTime);
+      oscillator.type = 'sine'; // Softer sound
+      gainNode.gain.setValueAtTime(0.15, audioContext.currentTime);
+      
+      // Play tone for 2 seconds
+      oscillator.start();
+      setTimeout(() => {
+        oscillator.stop();
+        audioContext.close(); // Clean up
+      }, 2000);
+      
+      console.log('🎵 Audio tone generated for mobile/desktop');
+    } catch (error) {
+      console.log('🎵 Audio generation failed:', error);
+    }
   };
 
   const pauseTrack = () => {
@@ -248,38 +279,7 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
     fetchLofiTracks(currentSeason);
   }, [currentSeason]);
 
-  // Set audio source when track changes
-  useEffect(() => {
-    if (playerRef.current && tracks.length > 0 && tracks[currentTrackIndex]) {
-      // Since YouTube URLs don't work directly in audio elements due to legal restrictions,
-      // we'll use a different approach. For now, we'll create a simple tone generator
-      // that provides actual audio feedback
-      
-      try {
-        // Create a simple audio context for generating tones
-        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        
-        // Set frequency based on track index for variety
-        oscillator.frequency.setValueAtTime(200 + (currentTrackIndex * 50), audioContext.currentTime);
-        gainNode.gain.setValueAtTime(0.1, audioContext.currentTime); // Low volume
-        
-        // Store audio context for cleanup
-        if (isPlaying) {
-          oscillator.start();
-          setTimeout(() => oscillator.stop(), 1000); // Play for 1 second
-        }
-        
-        console.log('🎵 Audio tone generated for track:', tracks[currentTrackIndex].title);
-      } catch (error) {
-        console.log('🎵 Audio context not supported, using visual mode only');
-      }
-    }
-  }, [currentTrackIndex, tracks, isPlaying]);
+
 
   // Auto-advance timer for fallback (in case audio events don't work)
   useEffect(() => {
