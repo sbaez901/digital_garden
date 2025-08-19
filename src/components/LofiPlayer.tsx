@@ -27,8 +27,8 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
   
 
   
-  // Audio element ref
-  const playerRef = useRef<HTMLAudioElement>(null);
+  // YouTube iframe ref
+  const playerRef = useRef<HTMLIFrameElement>(null);
   
   // YouTube API Key
   const API_KEY = 'AIzaSyB_sa4FBPqt8_lbDtcqJeIVvN8kNFray-c';
@@ -178,8 +178,20 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
     setIsPlaying(true);
     console.log('🎵 Playback started');
     
-    // Generate audio tone immediately for mobile compatibility
-    generateAudioTone();
+    // Try to play YouTube iframe if available
+    if (playerRef.current) {
+      try {
+        // Update iframe source to start playing
+        const iframe = playerRef.current;
+        iframe.src = `https://www.youtube.com/embed/${currentTrack.videoId}?autoplay=1&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&cc_load_policy=0&fs=0&loop=1&playlist=${currentTrack.videoId}&mute=0`;
+        console.log('🎵 YouTube iframe started');
+      } catch (error) {
+        console.log('🎵 YouTube iframe failed, using fallback');
+        generateAudioTone();
+      }
+    } else {
+      generateAudioTone();
+    }
     
     // Set a timer for auto-advance (3 minutes)
     setTimeout(() => {
@@ -190,7 +202,7 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
     }, 3 * 60 * 1000);
   };
 
-  // Generate audio tone function
+  // Generate audio tone function (fallback)
   const generateAudioTone = () => {
     try {
       // Create audio context (required for mobile)
@@ -452,18 +464,17 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
         )}
       </div>
 
-      {/* Hidden Audio Element for Actual Playback */}
-      <audio
-        ref={playerRef}
-        preload="none"
-        onEnded={() => {
-          if (isPlaying) {
-            console.log('🎵 Audio ended naturally, auto-advancing');
-            advanceToNextTrack();
-          }
-        }}
-        style={{ display: 'none' }}
-      />
+      {/* YouTube Player (Hidden but Functional) */}
+      <div className="hidden">
+        <iframe
+          ref={playerRef as any}
+          width="0"
+          height="0"
+          src={`https://www.youtube.com/embed/${currentTrack.videoId}?autoplay=0&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&cc_load_policy=0&fs=0&loop=1&playlist=${currentTrack.videoId}&mute=0`}
+          title="Lofi Music Player"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        />
+      </div>
 
 
     </div>
