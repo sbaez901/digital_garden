@@ -19,6 +19,7 @@ interface LofiPlayerProps {
 const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropActive = false }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
+  const [lastPlayedTrackIndex, setLastPlayedTrackIndex] = useState<number | null>(null);
   const [volume, setVolume] = useState(0.7);
   const [isMuted, setIsMuted] = useState(false);
   const [tracks, setTracks] = useState<Track[]>([]);
@@ -178,19 +179,20 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
     setIsPlaying(true);
     console.log('🎵 Playback started');
     
-    // Try to play YouTube iframe if available
-    if (playerRef.current) {
+    // Only reload iframe if it's a new track or first time
+    if (playerRef.current && (!isPlaying || currentTrackIndex !== lastPlayedTrackIndex)) {
       try {
         // Update iframe source to start playing
         const iframe = playerRef.current;
         iframe.src = `https://www.youtube.com/embed/${currentTrack.videoId}?autoplay=1&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&cc_load_policy=0&fs=0&loop=1&playlist=${currentTrack.videoId}&mute=0`;
-        console.log('🎵 YouTube iframe started');
+        console.log('🎵 YouTube iframe started for new track');
+        setLastPlayedTrackIndex(currentTrackIndex);
       } catch (error) {
         console.log('🎵 YouTube iframe failed, using fallback');
         generateAudioTone();
       }
     } else {
-      generateAudioTone();
+      console.log('🎵 Resuming current track (no iframe reload)');
     }
     
     // Set a timer for auto-advance (3 minutes)
@@ -241,8 +243,9 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
     setIsPlaying(false);
     console.log('🎵 Playback paused');
     
-    // For YouTube iframe, we can't directly pause, but we can update the state
-    // The visual feedback will show it's paused
+    // Store current track info so we can resume without reloading
+    // For now, we'll just update the visual state
+    // The YouTube iframe will continue playing but we show it as "paused"
   };
 
   // Auto-advance to next track when current one finishes
