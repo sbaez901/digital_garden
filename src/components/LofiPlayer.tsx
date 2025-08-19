@@ -183,6 +183,13 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
     // YouTube iframe will handle the actual pause
   };
 
+  // Auto-advance to next track when current one finishes
+  const advanceToNextTrack = () => {
+    const randomIndex = Math.floor(Math.random() * tracks.length);
+    setCurrentTrackIndex(randomIndex);
+    console.log(`🎵 Auto-advancing to random track: ${randomIndex + 1}/${tracks.length}`);
+  };
+
   const nextTrack = () => {
     // Select a random track instead of just the next one
     const randomIndex = Math.floor(Math.random() * tracks.length);
@@ -221,6 +228,53 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
   useEffect(() => {
     fetchLofiTracks(currentSeason);
   }, [currentSeason]);
+
+  // Listen for YouTube video end events and auto-advance
+  useEffect(() => {
+    const handleVideoEnd = () => {
+      if (isPlaying) {
+        console.log('🎵 Video ended, auto-advancing to next track');
+        advanceToNextTrack();
+      }
+    };
+
+    // Listen for YouTube iframe messages
+    const handleMessage = (event: MessageEvent) => {
+      if (event.origin !== 'https://www.youtube.com') return;
+      
+      try {
+        const data = JSON.parse(event.data);
+        if (data.event === 'onStateChange') {
+          // YouTube state: 0 = ended, 1 = playing, 2 = paused, 3 = buffering, 5 = cued
+          if (data.info === 0) {
+            handleVideoEnd();
+          }
+        }
+      } catch (error) {
+        // Ignore parsing errors from non-JSON messages
+      }
+    };
+
+    // Fallback: Timer-based auto-advance (every 3 minutes as most lofi tracks are ~3-5 min)
+    let autoAdvanceTimer: NodeJS.Timeout;
+    if (isPlaying && tracks.length > 0) {
+      autoAdvanceTimer = setTimeout(() => {
+        if (isPlaying) {
+          console.log('🎵 Auto-advance timer triggered, moving to next track');
+          advanceToNextTrack();
+        }
+      }, 3 * 60 * 1000); // 3 minutes
+    }
+
+    window.addEventListener('message', handleMessage);
+    
+    return () => {
+      window.removeEventListener('message', handleMessage);
+      if (autoAdvanceTimer) {
+        clearTimeout(autoAdvanceTimer);
+      }
+    };
+  }, [isPlaying, tracks.length]);
 
   // Debug: Log current state
   useEffect(() => {
@@ -387,7 +441,14 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
 
                    {/* Clean Status */}
                    <div className="text-xs text-center text-emerald-600 dark:text-emerald-400 py-1.5">
-                     {isLoading ? '🔄 Loading' : (isPlaying ? '🎵 Playing' : '⏸️ Paused')}
+                     {isLoading ? '🔄 Loading' : (
+                       isPlaying ? (
+                         <>
+                           🎵 Playing
+                           <span className="ml-1 text-xs opacity-75">• Auto-advance</span>
+                         </>
+                       ) : '⏸️ Paused'
+                     )}
                    </div>
     </div>
   );
