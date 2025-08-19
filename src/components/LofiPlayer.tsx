@@ -19,7 +19,6 @@ interface LofiPlayerProps {
 const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropActive = false }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
-  const [lastPlayedTrackIndex, setLastPlayedTrackIndex] = useState<number | null>(null);
   const [volume, setVolume] = useState(0.7);
   const [isMuted, setIsMuted] = useState(false);
   const [tracks, setTracks] = useState<Track[]>([]);
@@ -174,26 +173,11 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
     return null;
   };
 
-  // Audio player functions
+  // YouTube player functions (simple approach that works)
   const playTrack = () => {
     setIsPlaying(true);
     console.log('🎵 Playback started');
-    
-    // Only reload iframe if it's a new track or first time
-    if (playerRef.current && (!isPlaying || currentTrackIndex !== lastPlayedTrackIndex)) {
-      try {
-        // Update iframe source to start playing
-        const iframe = playerRef.current;
-        iframe.src = `https://www.youtube.com/embed/${currentTrack.videoId}?autoplay=1&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&cc_load_policy=0&fs=0&loop=1&playlist=${currentTrack.videoId}&mute=0`;
-        console.log('🎵 YouTube iframe started for new track');
-        setLastPlayedTrackIndex(currentTrackIndex);
-      } catch (error) {
-        console.log('🎵 YouTube iframe failed, using fallback');
-        generateAudioTone();
-      }
-    } else {
-      console.log('🎵 Resuming current track (no iframe reload)');
-    }
+    // YouTube iframe will handle the actual playback
     
     // Set a timer for auto-advance (3 minutes)
     setTimeout(() => {
@@ -204,48 +188,12 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
     }, 3 * 60 * 1000);
   };
 
-  // Generate audio tone function (fallback)
-  const generateAudioTone = () => {
-    try {
-      // Create audio context (required for mobile)
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      
-      // Resume context if suspended (mobile requirement)
-      if (audioContext.state === 'suspended') {
-        audioContext.resume();
-      }
-      
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-      
-      // Create a pleasant lofi-like tone
-      oscillator.frequency.setValueAtTime(220 + (currentTrackIndex * 30), audioContext.currentTime);
-      oscillator.type = 'sine'; // Softer sound
-      gainNode.gain.setValueAtTime(0.15, audioContext.currentTime);
-      
-      // Play tone for 2 seconds
-      oscillator.start();
-      setTimeout(() => {
-        oscillator.stop();
-        audioContext.close(); // Clean up
-      }, 2000);
-      
-      console.log('🎵 Audio tone generated for mobile/desktop');
-    } catch (error) {
-      console.log('🎵 Audio generation failed:', error);
-    }
-  };
+
 
   const pauseTrack = () => {
     setIsPlaying(false);
     console.log('🎵 Playback paused');
-    
-    // Store current track info so we can resume without reloading
-    // For now, we'll just update the visual state
-    // The YouTube iframe will continue playing but we show it as "paused"
+    // YouTube iframe will handle the actual pause
   };
 
   // Auto-advance to next track when current one finishes
@@ -458,13 +406,13 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
 
 
 
-      {/* YouTube Player (Hidden but Functional) */}
+      {/* YouTube Player (Hidden) */}
       <div className="hidden">
         <iframe
-          ref={playerRef as any}
+          ref={playerRef}
           width="0"
           height="0"
-          src={`https://www.youtube.com/embed/${currentTrack.videoId}?autoplay=0&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&cc_load_policy=0&fs=0&loop=1&playlist=${currentTrack.videoId}&mute=0`}
+          src={`https://www.youtube.com/embed/${currentTrack.videoId}?autoplay=${isPlaying ? 1 : 0}&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&cc_load_policy=0&fs=0&loop=1&playlist=${currentTrack.videoId}&mute=${isMuted ? 1 : 0}`}
           title="Lofi Music Player"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
         />
