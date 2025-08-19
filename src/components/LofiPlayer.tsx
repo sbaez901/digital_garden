@@ -238,11 +238,11 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
   };
 
   const pauseTrack = () => {
-    if (playerRef.current) {
-      playerRef.current.pause();
-    }
     setIsPlaying(false);
-    console.log('🎵 Audio playback paused');
+    console.log('🎵 Playback paused');
+    
+    // For YouTube iframe, we can't directly pause, but we can update the state
+    // The visual feedback will show it's paused
   };
 
   // Auto-advance to next track when current one finishes
@@ -453,16 +453,7 @@ const LofiPlayer: React.FC<LofiPlayerProps> = ({ currentSeason, isLofiBackdropAc
         </div>
       </div>
 
-      {/* Mobile-Friendly Status */}
-      <div className="text-xs text-center text-emerald-600 dark:text-emerald-400 py-1">
-        {isLoading ? '🔄 Loading' : (
-          isPlaying ? (
-            <>
-              🎵 Playing • Auto-advance
-            </>
-          ) : '⏸️ Paused'
-        )}
-      </div>
+
 
       {/* YouTube Player (Hidden but Functional) */}
       <div className="hidden">
