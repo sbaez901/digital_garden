@@ -1871,12 +1871,6 @@ export default function DigitalGardenApp() {
                   </div>
                 )}
               </div>
-              
-              {tasks.length === 0 && (
-                <div className="text-center py-6 sm:py-8 text-gray-500 dark:text-gray-400">
-                  <p className="text-base sm:text-lg">No tasks yet! Click "Add Task" to start growing your garden.</p>
-                </div>
-              )}
             </div>
           </>
         )}
