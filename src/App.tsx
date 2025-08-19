@@ -1077,7 +1077,7 @@ export default function DigitalGardenApp() {
             ) : (
               <button
                 onClick={handleLogout}
-                className="px-3 sm:px-4 py-2 sm:py-2 bg-gradient-to-r from-gray-500 to-gray-600 text-white text-sm font-medium rounded-lg hover:from-gray-600 hover:to-gray-700 transition-all duration-200 hover:scale-105 active:scale-95 shadow-md touch-manipulation"
+                className="px-3 sm:px-4 py-2 sm:py-2 bg-gradient-to-r from-rose-400 to-rose-500 text-white text-sm font-medium rounded-lg hover:from-rose-500 hover:to-rose-600 transition-all duration-200 hover:scale-105 active:scale-95 shadow-md touch-manipulation"
               >
                 Sign Out
               </button>
