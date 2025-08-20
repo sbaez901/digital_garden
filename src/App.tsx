@@ -1065,7 +1065,7 @@ export default function DigitalGardenApp() {
           </div>
           
           {/* Modern Action Buttons - Mobile Stacked */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
+          <div className="flex flex-row items-center gap-2 sm:gap-3 w-auto">
             {/* User Status Indicator - Mobile Optimized */}
             {currentUser && (
               <div className="flex items-center justify-center gap-2 px-3 py-2 bg-emerald-50 dark:bg-emerald-900/30 rounded-lg border border-emerald-200/50 dark:border-emerald-700/50">
@@ -1091,7 +1091,7 @@ export default function DigitalGardenApp() {
                 console.log('🔄 Toggle clicked! Current dark mode:', isDarkMode);
                 setIsDarkMode(!isDarkMode);
               }}
-              className="p-1 sm:p-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 rounded-lg transition-all duration-200 hover:scale-105 active:scale-95 touch-manipulation"
+              className="p-1 sm:p-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 rounded-lg transition-all duration-200 hover:scale-105 active:scale-95 touch-manipulation w-auto flex-shrink-0"
               title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
             >
               {isDarkMode ? (
@@ -1109,14 +1109,14 @@ export default function DigitalGardenApp() {
             {!currentUser ? (
               <button
                 onClick={() => setShowAuth(true)}
-                className="px-2 sm:px-4 py-1 sm:py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-xs sm:text-sm font-medium rounded-lg hover:from-emerald-600 hover:to-teal-700 transition-all duration-200 hover:scale-105 active:scale-95 shadow-md touch-manipulation"
+                className="px-2 sm:px-4 py-1 sm:py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-xs sm:text-sm font-medium rounded-lg hover:from-emerald-600 hover:to-teal-700 transition-all duration-200 hover:scale-105 active:scale-95 shadow-md touch-manipulation w-auto flex-shrink-0"
               >
                 Sign In
               </button>
             ) : (
               <button
                 onClick={handleLogout}
-                className="px-2 sm:px-4 py-1 sm:py-2 bg-gradient-to-r from-rose-400 to-rose-500 text-white text-xs sm:text-sm font-medium rounded-lg hover:from-rose-500 hover:to-rose-600 transition-all duration-200 hover:scale-105 active:scale-95 shadow-md touch-manipulation"
+                className="px-2 sm:px-4 py-1 sm:py-2 bg-gradient-to-r from-rose-400 to-rose-500 text-white text-xs sm:text-sm font-medium rounded-lg hover:from-rose-500 hover:to-rose-600 transition-all duration-200 hover:scale-105 active:scale-95 shadow-md touch-manipulation w-auto flex-shrink-0"
               >
                 Sign Out
               </button>
