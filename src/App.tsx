@@ -12,6 +12,9 @@ interface Task {
   status: "todo" | "done";
   subtasks: Task[];
   pomodoros?: number; // Track completed pomodoros for this task
+  priority?: "low" | "medium" | "high";
+  dueDate?: string;
+  category?: string;
 }
 
 export default function DigitalGardenApp() {
@@ -35,6 +38,10 @@ export default function DigitalGardenApp() {
   // Drag and drop state
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
   const [dragOverTaskId, setDragOverTaskId] = useState<string | null>(null);
+  
+  // Task organization state
+  const [taskFilter, setTaskFilter] = useState<'all' | 'high' | 'medium' | 'low'>('all');
+  const [taskSortBy, setTaskSortBy] = useState<'priority' | 'category' | 'status' | 'date'>('priority');
 
   // Dark mode effect
   useEffect(() => {
@@ -149,7 +156,7 @@ export default function DigitalGardenApp() {
       const savedTasks = await loadTasks(userId);
       
       // Add safety checks for loaded data
-      if (savedTasks && Array.isArray(savedTasks)) {
+      if (savedTasks && Array.isArray(savedTasks) && savedTasks.length > 0) {
         // Validate each task has required properties
         const validatedTasks = savedTasks.filter(task => 
           task && 
@@ -163,8 +170,9 @@ export default function DigitalGardenApp() {
         setTasks(validatedTasks);
         console.log("User tasks loaded successfully:", validatedTasks.length);
       } else {
-        console.warn("Invalid task data received, starting fresh");
-        setTasks([]);
+        // New user or no tasks - create sample tasks for better onboarding
+        console.log("New user detected or no tasks found - creating sample tasks");
+        createSampleTasks();
       }
     } catch (error) {
       console.warn("Could not load user tasks:", error);
@@ -271,25 +279,33 @@ export default function DigitalGardenApp() {
       name: 'Cherry Blossom Spring Garden',
       pieces: 12,
       colors: ['from-pink-100 to-rose-200', 'from-pink-200 to-rose-300'],
-      theme: '🌸 Spring Renewal'
+      theme: '🌸 Spring Renewal',
+      challenge: 'Spring Cleaning: Organize 3 old tasks and complete 2 new ones',
+      bonus: 'Complete spring challenge to unlock bonus puzzle pieces!'
     },
     summer: {
       name: 'Lavender Summer Garden',
       pieces: 12,
       colors: ['from-purple-100 to-indigo-200', 'from-purple-200 to-indigo-300'],
-      theme: '🌿 Summer Abundance'
+      theme: '🌿 Summer Abundance',
+      challenge: 'Summer Growth: Complete 5 tasks and add 2 subtasks to existing ones',
+      bonus: 'Complete summer challenge to unlock bonus puzzle pieces!'
     },
     autumn: {
       name: 'Maple Autumn Garden',
       pieces: 12,
       colors: ['from-orange-100 to-red-200', 'from-orange-200 to-red-300'],
-      theme: '🍂 Autumn Warmth'
+      theme: '🍂 Autumn Warmth',
+      challenge: 'Autumn Harvest: Complete 3 high-priority tasks and organize by category',
+      bonus: 'Complete autumn challenge to unlock bonus puzzle pieces!'
     },
     winter: {
       name: 'Snow Winter Garden',
       pieces: 12,
       colors: ['from-blue-100 to-slate-200', 'from-blue-200 to-slate-300'],
-      theme: '❄️ Winter Serenity'
+      theme: '❄️ Winter Serenity',
+      challenge: 'Winter Reflection: Review and complete 4 overdue tasks',
+      bonus: 'Complete winter challenge to unlock bonus puzzle pieces!'
     }
   };
   
@@ -636,12 +652,98 @@ export default function DigitalGardenApp() {
     }
   }, [timerState]);
 
+  // Create sample tasks for new users to eliminate empty states
+  const createSampleTasks = () => {
+    const sampleTasks: Task[] = [
+      {
+        id: "sample-1",
+        title: "Welcome to Task Garden! 🌱",
+        status: "todo",
+        subtasks: [
+          {
+            id: "sample-1a",
+            title: "Click this task to mark it complete",
+            status: "todo",
+            subtasks: [],
+            priority: "high",
+            category: "Getting Started"
+          },
+          {
+            id: "sample-1b",
+            title: "Try adding your own task below",
+            status: "todo",
+            subtasks: [],
+            priority: "medium",
+            category: "Getting Started"
+          }
+        ],
+        priority: "high",
+        category: "Getting Started"
+      },
+      {
+        id: "sample-2",
+        title: "Start your first Pomodoro session ⏰",
+        status: "todo",
+        subtasks: [
+          {
+            id: "sample-2a",
+            title: "Go to the Pomodoro tab",
+            status: "todo",
+            subtasks: [],
+            priority: "medium",
+            category: "Productivity"
+          },
+          {
+            id: "sample-2b",
+            title: "Set a 25-minute work timer",
+            status: "todo",
+            subtasks: [],
+            priority: "medium",
+            category: "Productivity"
+          }
+        ],
+        priority: "medium",
+        category: "Productivity"
+      },
+      {
+        id: "sample-3",
+        title: "Explore your garden growth 🌿",
+        status: "todo",
+        subtasks: [
+          {
+            id: "sample-3a",
+            title: "Complete tasks to reveal puzzle pieces",
+            status: "todo",
+            subtasks: [],
+            priority: "low",
+            category: "Garden"
+          },
+          {
+            id: "sample-3b",
+            title: "Switch seasons to see different themes",
+            status: "todo",
+            subtasks: [],
+            priority: "low",
+            category: "Garden"
+          }
+        ],
+        priority: "low",
+        category: "Garden"
+      }
+    ];
+    
+    setTasks(sampleTasks);
+    console.log("🌱 Sample tasks created for new user experience");
+  };
+
   const addTask = () => {
     const newTask: Task = {
       id: Date.now().toString(),
       title: "Click to edit new task",
       status: "todo",
-      subtasks: []
+      subtasks: [],
+      priority: "medium",
+      category: "General"
     };
     setTasks([...tasks, newTask]);
     
@@ -913,16 +1015,40 @@ export default function DigitalGardenApp() {
                 autoFocus
               />
             ) : (
-              <span 
-                className={`font-medium cursor-pointer transition-all duration-200 ${
-                  task.status === 'done'
-                    ? 'text-gray-500 dark:text-gray-400 line-through'
-                    : 'text-gray-800 dark:text-gray-200 hover:text-emerald-700 dark:hover:text-emerald-400'
-                }`}
-                onClick={() => level === 0 ? startEditing(task) : startEditingSubtask(task, parentId!)}
-              >
-                {task.title}
-              </span>
+              <div className="flex flex-col gap-1">
+                <span 
+                  className={`font-medium cursor-pointer transition-all duration-200 ${
+                    task.status === 'done'
+                      ? 'text-gray-500 dark:text-gray-400 line-through'
+                      : 'text-gray-800 dark:text-gray-200 hover:text-emerald-700 dark:hover:text-emerald-400'
+                  }`}
+                  onClick={() => level === 0 ? startEditing(task) : startEditingSubtask(task, parentId!)}
+                >
+                  {task.title}
+                </span>
+                
+                {/* Priority and Category Badges */}
+                <div className="flex items-center gap-2">
+                  {task.priority && (
+                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                      task.priority === 'high' 
+                        ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
+                        : task.priority === 'medium'
+                        ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
+                        : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                    }`}>
+                      {task.priority === 'high' ? '🔥 High' : 
+                       task.priority === 'medium' ? '⚡ Medium' : '🌱 Low'}
+                    </span>
+                  )}
+                  
+                  {task.category && (
+                    <span className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 px-2 py-1 rounded-full font-medium">
+                      📁 {task.category}
+                    </span>
+                  )}
+                </div>
+              </div>
             )}
             
             {hasSubtasks && (
@@ -1402,6 +1528,20 @@ export default function DigitalGardenApp() {
                 </div>
               </div>
               
+              {/* Seasonal Challenges Section */}
+              <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/30 dark:to-orange-900/30 rounded-lg p-3 border border-amber-100/50 dark:border-amber-700/50 transition-colors duration-300">
+                <h3 className="font-semibold text-amber-800 dark:text-amber-200 mb-2 flex items-center gap-2">
+                  <span className="text-sm">🎯</span>
+                  {currentSeason.charAt(0).toUpperCase() + currentSeason.slice(1)} Challenge
+                </h3>
+                <div className="text-xs text-amber-700 dark:text-amber-300 mb-2">
+                  {seasonalGardens[currentSeason].challenge}
+                </div>
+                <div className="text-xs text-amber-600 dark:text-amber-400 font-medium">
+                  💎 {seasonalGardens[currentSeason].bonus}
+                </div>
+              </div>
+              
               {/* Compact Lofi Music Player */}
               <LofiPlayer currentSeason={currentSeason} isLofiBackdropActive={!!lofiThumbnail} />
             </div>
@@ -1856,6 +1996,14 @@ export default function DigitalGardenApp() {
                 >
                   + Add Task
                 </button>
+                
+                <button
+                  onClick={createSampleTasks}
+                  className="bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm sm:text-base font-medium transition-colors"
+                  title="Add sample tasks to explore the app features"
+                >
+                  🌱 Sample Tasks
+                </button>
                   <button
                     onClick={() => {
                       if (window.confirm('Are you sure you want to clear all data? This will remove all tasks and reset puzzle progress. This action cannot be undone.')) {
@@ -1875,21 +2023,93 @@ export default function DigitalGardenApp() {
                 </div>
               </div>
               
+              {/* Task Organization Toolbar */}
+              {tasks && Array.isArray(tasks) && tasks.length > 0 && (
+                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 mb-4">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Filter:</span>
+                      <select
+                        value={taskFilter}
+                        onChange={(e) => setTaskFilter(e.target.value as 'all' | 'high' | 'medium' | 'low')}
+                        className="text-xs bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded px-2 py-1"
+                      >
+                        <option value="all">All Priorities</option>
+                        <option value="high">🔥 High</option>
+                        <option value="medium">⚡ Medium</option>
+                        <option value="low">🌱 Low</option>
+                      </select>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Sort:</span>
+                      <select
+                        value={taskSortBy}
+                        onChange={(e) => setTaskSortBy(e.target.value as 'priority' | 'category' | 'status' | 'date')}
+                        className="text-xs bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded px-2 py-1"
+                      >
+                        <option value="priority">By Priority</option>
+                        <option value="category">By Category</option>
+                        <option value="status">By Status</option>
+                        <option value="date">By Date</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
               <div className="space-y-3">
                 {tasks && Array.isArray(tasks) && tasks.length > 0 ? (
                   tasks
                     .filter(task => task && task.id && task.title) // Additional safety filter
+                    .filter(task => {
+                      if (taskFilter === 'all') return true;
+                      return task.priority === taskFilter;
+                    })
                     .sort((a, b) => {
-                      // Sort by status: incomplete first, then completed
-                      if (a.status === 'done' && b.status !== 'done') return 1;
-                      if (a.status !== 'done' && b.status === 'done') return -1;
-                      // If same status, maintain original order
+                      // Sort by selected criteria
+                      if (taskSortBy === 'priority') {
+                        const priorityOrder = { high: 3, medium: 2, low: 1 };
+                        const aPriority = priorityOrder[a.priority || 'low'] || 1;
+                        const bPriority = priorityOrder[b.priority || 'low'] || 1;
+                        return bPriority - aPriority;
+                      } else if (taskSortBy === 'category') {
+                        return (a.category || '').localeCompare(b.category || '');
+                      } else if (taskSortBy === 'status') {
+                        // Sort by status: incomplete first, then completed
+                        if (a.status === 'done' && b.status !== 'done') return 1;
+                        if (a.status !== 'done' && b.status === 'done') return -1;
+                        return 0;
+                      } else if (taskSortBy === 'date') {
+                        // Sort by creation date (using ID as proxy)
+                        return parseInt(b.id) - parseInt(a.id);
+                      }
                       return 0;
                     })
                     .map((task) => renderTask(task))
                 ) : (
-                  <div className="text-center py-6 text-gray-500 dark:text-gray-400">
-                    <p className="text-base">No tasks yet! Click "Add Task" to start growing your garden.</p>
+                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                    <div className="mb-6">
+                      <div className="text-6xl mb-4">🌱</div>
+                      <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">Welcome to Task Garden!</h3>
+                      <p className="text-base mb-4">Let's get you started with some sample tasks to explore the app.</p>
+                    </div>
+                    
+                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                      <button
+                        onClick={createSampleTasks}
+                        className="bg-emerald-500 hover:bg-emerald-600 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white px-6 py-3 rounded-lg text-base font-medium transition-colors shadow-md hover:shadow-lg"
+                      >
+                        🚀 Get Started with Sample Tasks
+                      </button>
+                      
+                      <button
+                        onClick={addTask}
+                        className="bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white px-6 py-3 rounded-lg text-base font-medium transition-colors shadow-md hover:shadow-lg"
+                      >
+                        ✨ Create Your First Task
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
