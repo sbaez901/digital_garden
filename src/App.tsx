@@ -174,6 +174,24 @@ export default function DigitalGardenApp() {
     }
   };
 
+  // Save user tasks to Firebase
+  const saveUserTasks = async (userId: string, tasksToSave: Task[]) => {
+    try {
+      const { saveTasks } = await import("./firebase");
+      await saveTasks(userId, tasksToSave);
+      console.log("Tasks saved successfully");
+    } catch (error) {
+      console.error("Could not save tasks:", error);
+    }
+  };
+
+  // Save tasks to Firebase whenever tasks change (but only if user is authenticated)
+  useEffect(() => {
+    if (currentUser && tasks.length >= 0) {
+      saveUserTasks(currentUser.uid, tasks);
+    }
+  }, [tasks, currentUser]);
+
   // Handle logout
   const handleLogout = async () => {
     try {
