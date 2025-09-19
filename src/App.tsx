@@ -65,27 +65,32 @@ export default function DigitalGardenApp() {
 
   // Authentication persistence effect - listen for auth state changes
   useEffect(() => {
+    console.log("Setting up auth listener...");
+    
     const setupAuthListener = async () => {
       try {
         const { onAuthChange } = await import("./firebase");
         
         // Listen for authentication state changes
         const unsubscribe = onAuthChange((user) => {
-          console.log("Auth state changed:", user ? user.email : "No user");
+          console.log("🔥 Auth state changed:", user ? `User: ${user.email} (${user.uid})` : "No user");
           setCurrentUser(user);
           
           // If user is authenticated, load their tasks
           if (user) {
+            console.log("🔄 Loading tasks for user:", user.uid);
             loadUserTasks(user.uid);
           } else {
             // User signed out, clear tasks
+            console.log("🧹 Clearing tasks - user signed out");
             setTasks([]);
           }
         });
         
+        console.log("✅ Auth listener setup complete");
         return unsubscribe;
       } catch (error) {
-        console.warn("Could not setup auth listener:", error);
+        console.error("❌ Could not setup auth listener:", error);
       }
     };
     
@@ -94,20 +99,45 @@ export default function DigitalGardenApp() {
 
   // Save tasks to Firebase whenever they change
   useEffect(() => {
+    console.log("🔄 Task save effect triggered:", { 
+      currentUser: !!currentUser, 
+      tasksLength: tasks.length, 
+      userId: currentUser?.uid,
+      userEmail: currentUser?.email 
+    });
+    
     if (currentUser && tasks.length >= 0) { // Changed from > 0 to >= 0 to save empty arrays too
       const saveTasksToFirebase = async () => {
         try {
+          console.log("🚀 Starting Firebase save process...");
+          console.log("📊 Tasks to save:", tasks);
+          console.log("👤 User ID:", currentUser.uid);
+          
           const { saveTasks } = await import("./firebase");
+          console.log("📦 Firebase module imported successfully");
+          
           await saveTasks(currentUser.uid, tasks);
-          console.log("Tasks saved to Firebase:", tasks.length);
-        } catch (error) {
-          console.warn("Could not save tasks to Firebase:", error);
+          console.log("✅ Tasks saved to Firebase successfully:", tasks.length);
+        } catch (error: any) {
+          console.error("❌ Could not save tasks to Firebase:", error);
+          console.error("Error details:", {
+            name: error.name,
+            message: error.message,
+            code: error.code,
+            stack: error.stack
+          });
         }
       };
       
       // Debounce the save to avoid too many Firebase calls
       const timeoutId = setTimeout(saveTasksToFirebase, 1000);
       return () => clearTimeout(timeoutId);
+    } else {
+      console.log("⏸️ Not saving tasks:", { 
+        hasUser: !!currentUser, 
+        tasksLength: tasks.length,
+        userEmail: currentUser?.email 
+      });
     }
   }, [tasks, currentUser]);
 
@@ -117,8 +147,25 @@ export default function DigitalGardenApp() {
       setIsLoadingTasks(true);
       const { loadTasks } = await import("./firebase");
       const savedTasks = await loadTasks(userId);
-      setTasks(savedTasks);
-      console.log("User tasks loaded successfully:", savedTasks.length);
+      
+      // Add safety checks for loaded data
+      if (savedTasks && Array.isArray(savedTasks)) {
+        // Validate each task has required properties
+        const validatedTasks = savedTasks.filter(task => 
+          task && 
+          typeof task === 'object' && 
+          task.id && 
+          task.title && 
+          task.status && 
+          Array.isArray(task.subtasks)
+        );
+        
+        setTasks(validatedTasks);
+        console.log("User tasks loaded successfully:", validatedTasks.length);
+      } else {
+        console.warn("Invalid task data received, starting fresh");
+        setTasks([]);
+      }
     } catch (error) {
       console.warn("Could not load user tasks:", error);
       setTasks([]); // Start with empty tasks if loading fails
@@ -422,7 +469,7 @@ export default function DigitalGardenApp() {
       case 'evening':
         return {
           bgGradient: 'from-orange-100 to-pink-100',
-          textColor: 'text-orange-800',
+          textColor: 'text-emerald-700',
           icon: '🌆',
           message: 'Good evening! Your garden is glowing with sunset colors.'
         };
@@ -812,7 +859,7 @@ export default function DigitalGardenApp() {
 
   const renderTask = (task: Task, level: number = 0, parentId?: string) => {
     const isExpanded = expandedTasks.has(task.id);
-    const hasSubtasks = task.subtasks.length > 0;
+    const hasSubtasks = task.subtasks && Array.isArray(task.subtasks) && task.subtasks.length > 0;
     
     return (
       <div 
@@ -826,16 +873,29 @@ export default function DigitalGardenApp() {
         onDragLeave={handleDragLeave}
         onDrop={(e) => level === 0 && handleDrop(e, task.id)}
       >
-        <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 hover:shadow-sm transition-shadow opacity-100 filter-none">
+        <div 
+          className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 hover:shadow-sm transition-shadow opacity-100 filter-none cursor-pointer"
+          onClick={() => {
+            if (editingId !== task.id) {
+              level === 0 ? startEditing(task) : startEditingSubtask(task, parentId!)
+            }
+          }}
+        >
           <div className="flex items-center gap-3 flex-1">
             {level === 0 && (
-              <div className="text-gray-400 cursor-grab active:cursor-grabbing select-none">
+              <div 
+                className="text-gray-400 cursor-grab active:cursor-grabbing select-none"
+                onClick={(e) => e.stopPropagation()}
+              >
                 ⋮⋮
               </div>
             )}
             {hasSubtasks && (
               <button
-                onClick={() => toggleExpanded(task.id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleExpanded(task.id);
+                }}
                 className="text-emerald-600 hover:text-emerald-800 transition-colors"
               >
                 {isExpanded ? '▼' : '▶'}
@@ -848,7 +908,7 @@ export default function DigitalGardenApp() {
                 value={editingTitle}
                 onChange={(e) => setEditingTitle(e.target.value)}
                 onBlur={saveEdit}
-                onKeyPress={(e) => e.key === 'Enter' && saveEdit()}
+                onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
                 className="flex-1 px-3 py-2 border border-emerald-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-400 mr-2"
                 autoFocus
               />
@@ -867,7 +927,7 @@ export default function DigitalGardenApp() {
             
             {hasSubtasks && (
               <span className="text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/50 px-2 py-1 rounded-full">
-                {task.subtasks.length} subtask{task.subtasks.length !== 1 ? 's' : ''}
+                {task.subtasks && Array.isArray(task.subtasks) ? task.subtasks.length : 0} subtask{(task.subtasks && Array.isArray(task.subtasks) ? task.subtasks.length : 0) !== 1 ? 's' : ''}
               </span>
             )}
             
@@ -881,7 +941,10 @@ export default function DigitalGardenApp() {
           
           <div className="flex items-center gap-2">
             <button
-              onClick={() => toggleStatus(task.id, parentId)}
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleStatus(task.id, parentId);
+              }}
               className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all duration-200 cursor-pointer ${
                 task.status === 'done'
                   ? 'bg-green-500 border-green-500 text-white'
@@ -898,7 +961,10 @@ export default function DigitalGardenApp() {
             
             {level === 0 && (
               <button
-                onClick={() => addSubtask(task.id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  addSubtask(task.id);
+                }}
                 className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 px-2 py-1 rounded hover:bg-emerald-50 dark:hover:bg-emerald-900/50 transition-colors"
                 title="Add subtask"
               >
@@ -907,8 +973,11 @@ export default function DigitalGardenApp() {
             )}
             
             <button
-              onClick={() => deleteTask(task.id, parentId)}
-              className="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 px-2 py-1 rounded hover:bg-red-50 dark:hover:bg-red-900/50 transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                deleteTask(task.id, parentId);
+              }}
+              className="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 px-2 py-1 rounded hover:bg-red-50 dark:hover:text-red-900/50 transition-colors"
             >
               ×
             </button>
@@ -996,7 +1065,7 @@ export default function DigitalGardenApp() {
           </div>
           
           {/* Modern Action Buttons - Mobile Stacked */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
+          <div className="flex flex-row items-center gap-3 sm:gap-3 w-auto ml-auto">
             {/* User Status Indicator - Mobile Optimized */}
             {currentUser && (
               <div className="flex items-center justify-center gap-2 px-3 py-2 bg-emerald-50 dark:bg-emerald-900/30 rounded-lg border border-emerald-200/50 dark:border-emerald-700/50">
@@ -1022,7 +1091,7 @@ export default function DigitalGardenApp() {
                 console.log('🔄 Toggle clicked! Current dark mode:', isDarkMode);
                 setIsDarkMode(!isDarkMode);
               }}
-              className="p-2 sm:p-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 rounded-lg transition-all duration-200 hover:scale-105 active:scale-95 touch-manipulation"
+              className="p-2 sm:p-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 rounded-lg transition-all duration-200 hover:scale-105 active:scale-95 touch-manipulation w-auto flex-shrink-0"
               title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
             >
               {isDarkMode ? (
@@ -1040,14 +1109,14 @@ export default function DigitalGardenApp() {
             {!currentUser ? (
               <button
                 onClick={() => setShowAuth(true)}
-                className="px-3 sm:px-4 py-2 sm:py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-sm font-medium rounded-lg hover:from-emerald-600 hover:to-teal-700 transition-all duration-200 hover:scale-105 active:scale-95 shadow-md touch-manipulation"
+                className="px-3 sm:px-4 py-2 sm:py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-sm sm:text-sm font-medium rounded-lg hover:from-emerald-600 hover:to-teal-700 transition-all duration-200 hover:scale-105 active:scale-95 shadow-md touch-manipulation w-auto flex-shrink-0"
               >
                 Sign In
               </button>
             ) : (
               <button
                 onClick={handleLogout}
-                className="px-3 sm:px-4 py-2 sm:py-2 bg-gradient-to-r from-gray-500 to-gray-600 text-white text-sm font-medium rounded-lg hover:from-gray-600 hover:to-gray-700 transition-all duration-200 hover:scale-105 active:scale-95 shadow-md touch-manipulation"
+                className="px-3 sm:px-4 py-2 sm:py-2 bg-gradient-to-r from-rose-400 to-rose-500 text-white text-sm sm:text-sm font-medium rounded-lg hover:from-rose-500 hover:to-rose-600 transition-all duration-200 hover:scale-105 active:scale-95 shadow-md touch-manipulation w-auto flex-shrink-0"
               >
                 Sign Out
               </button>
@@ -1119,7 +1188,7 @@ export default function DigitalGardenApp() {
               {/* Total Tasks Completed */}
               <div className="text-center p-1.5 sm:p-1.5 bg-white/80 dark:bg-gray-700/80 rounded border border-emerald-200/50 dark:border-emerald-600/50">
                 <div className="text-sm font-bold text-emerald-700 dark:text-emerald-300">
-                  {tasks.filter(task => task.status === 'done').length}
+                  {tasks && Array.isArray(tasks) ? tasks.filter(task => task && task.status === 'done').length : 0}
                 </div>
                 <div className="text-xs text-emerald-600 dark:text-emerald-400">Tasks</div>
               </div>
@@ -1127,15 +1196,20 @@ export default function DigitalGardenApp() {
               {/* Total Subtasks Completed */}
               <div className="text-center p-1.5 sm:p-1.5 bg-white/80 dark:bg-gray-700/80 rounded border border-blue-200/50 dark:border-blue-600/50">
                 <div className="text-sm font-bold text-blue-700 dark:text-blue-300">
-                  {tasks.reduce((total, task) => total + task.subtasks.filter(st => st.status === 'done').length, 0)}
+                  {tasks && Array.isArray(tasks) ? tasks.reduce((total, task) => {
+                    if (task && task.subtasks && Array.isArray(task.subtasks)) {
+                      return total + task.subtasks.filter(st => st && st.status === 'done').length;
+                    }
+                    return total;
+                  }, 0) : 0}
                 </div>
                 <div className="text-xs text-blue-600 dark:text-blue-400">Subtasks</div>
               </div>
               
               {/* Total Pomodoros */}
               <div className="text-center p-1.5 sm:p-1.5 bg-white/80 dark:bg-gray-700/80 rounded border border-amber-200/50 dark:border-amber-600/50">
-                <div className="text-sm font-bold text-amber-700 dark:text-amber-300">
-                  {tasks.reduce((total, task) => total + (task.pomodoros || 0), 0)}
+                <div className="text-sm font-bold text-amber-700 dark:text-emerald-300">
+                  {tasks && Array.isArray(tasks) ? tasks.reduce((total, task) => total + (task && task.pomodoros ? task.pomodoros : 0), 0) : 0}
                 </div>
                 <div className="text-xs text-amber-600 dark:text-amber-400">Pomodoros</div>
               </div>
@@ -1802,22 +1876,23 @@ export default function DigitalGardenApp() {
               </div>
               
               <div className="space-y-3">
-                {tasks
-                  .sort((a, b) => {
-                    // Sort by status: incomplete first, then completed
-                    if (a.status === 'done' && b.status !== 'done') return 1;
-                    if (a.status !== 'done' && b.status === 'done') return -1;
-                    // If same status, maintain original order
-                    return 0;
-                  })
-                  .map((task) => renderTask(task))}
+                {tasks && Array.isArray(tasks) && tasks.length > 0 ? (
+                  tasks
+                    .filter(task => task && task.id && task.title) // Additional safety filter
+                    .sort((a, b) => {
+                      // Sort by status: incomplete first, then completed
+                      if (a.status === 'done' && b.status !== 'done') return 1;
+                      if (a.status !== 'done' && b.status === 'done') return -1;
+                      // If same status, maintain original order
+                      return 0;
+                    })
+                    .map((task) => renderTask(task))
+                ) : (
+                  <div className="text-center py-6 text-gray-500 dark:text-gray-400">
+                    <p className="text-base">No tasks yet! Click "Add Task" to start growing your garden.</p>
+                  </div>
+                )}
               </div>
-              
-              {tasks.length === 0 && (
-                <div className="text-center py-6 sm:py-8 text-gray-500 dark:text-gray-400">
-                  <p className="text-base sm:text-lg">No tasks yet! Click "Add Task" to start growing your garden.</p>
-                </div>
-              )}
             </div>
           </>
         )}

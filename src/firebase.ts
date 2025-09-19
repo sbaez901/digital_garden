@@ -21,14 +21,14 @@ const preloadFirebaseModules = async () => {
   
   try {
     console.log('Preloading Firebase modules...');
-    const [authModule, firestoreModule] = await Promise.all([
+    const [authModule, databaseModule] = await Promise.all([
       import('https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js'),
-      import('https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js')
+      import('https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js')
     ]);
     
     firebaseModules = {
       auth: authModule,
-      firestore: firestoreModule
+      database: databaseModule
     };
     
     // Cache globally for debugging
@@ -57,10 +57,10 @@ const getFirebaseInstances = () => {
   return { firebaseApp: window.firebaseApp, firebaseAuth: window.firebaseAuth };
 };
 
-// Get Firestore instance
-const getFirestoreInstance = () => {
+// Get Realtime Database instance
+const getDatabaseInstance = () => {
   if (!window.firebaseDb) {
-    throw new Error('Firestore not initialized. Please refresh the page.');
+    throw new Error('Realtime Database not initialized. Please refresh the page.');
   }
   return window.firebaseDb;
 };
@@ -119,52 +119,76 @@ export const onAuthChange = (callback: (user: any) => void) => {
   try {
     const { firebaseAuth } = getFirebaseInstances();
     
-    getFirebaseModules().then(({ auth }) => {
+    return getFirebaseModules().then(({ auth }) => {
       return auth.onAuthStateChanged(firebaseAuth, callback);
     });
   } catch (error) {
     console.warn('Firebase not initialized, using demo auth');
     callback(null);
-    return () => {};
+    return Promise.resolve(() => {});
   }
 };
 
 // Task Persistence Functions
 export const saveTasks = async (userId: string, tasks: any[]) => {
   try {
-    const db = getFirestoreInstance();
-    const { firestore } = await getFirebaseModules();
+    console.log('🔄 Attempting to save tasks for user:', userId, 'Tasks count:', tasks.length);
     
-    const userDocRef = firestore.doc(db, 'users', userId);
-    await firestore.setDoc(userDocRef, {
+    const db = getDatabaseInstance();
+    const { database } = await getFirebaseModules();
+    
+    const userRef = database.ref(db, `users/${userId}`);
+    await database.set(userRef, {
       tasks: tasks,
       lastUpdated: new Date().toISOString()
     });
-    console.log('Tasks saved to Firebase successfully');
-  } catch (error) {
-    console.error('Failed to save tasks to Firebase:', error);
-    throw new Error('Failed to save tasks');
+    console.log('✅ Tasks saved to Realtime Database successfully');
+  } catch (error: any) {
+    console.error('❌ Failed to save tasks to Realtime Database:', error);
+    console.error('Error details:', {
+      code: error.code,
+      message: error.message,
+      stack: error.stack
+    });
+    
+    // Check for specific database errors
+    if (error.code === 'PERMISSION_DENIED') {
+      console.error('🔒 Permission denied - check database security rules');
+      throw new Error('Permission denied. Please check your Firebase configuration.');
+    } else if (error.code === 'UNAVAILABLE') {
+      console.error('🌐 Database service unavailable - retrying...');
+      throw new Error('Database service temporarily unavailable. Please try again.');
+    } else {
+      throw new Error(`Failed to save tasks: ${error.message}`);
+    }
   }
 };
 
 export const loadTasks = async (userId: string) => {
   try {
-    const db = getFirestoreInstance();
-    const { firestore } = await getFirebaseModules();
+    console.log('🔄 Attempting to load tasks for user:', userId);
     
-    const userDocRef = firestore.doc(db, 'users', userId);
-    const userDoc = await firestore.getDoc(userDocRef);
+    const db = getDatabaseInstance();
+    const { database } = await getFirebaseModules();
     
-    if (userDoc.exists()) {
-      const userData = userDoc.data();
-      console.log('Tasks loaded from Firebase successfully');
+    const userRef = database.ref(db, `users/${userId}`);
+    const snapshot = await database.get(userRef);
+    
+    if (snapshot.exists()) {
+      const userData = snapshot.val();
+      console.log('✅ Tasks loaded from Realtime Database successfully:', userData.tasks?.length || 0);
       return userData.tasks || [];
     } else {
-      console.log('No existing tasks found, starting fresh');
+      console.log('📝 No existing tasks found, starting fresh');
       return [];
     }
-  } catch (error) {
-    console.error('Failed to load tasks from Firebase:', error);
-    throw new Error('Failed to load tasks');
+  } catch (error: any) {
+    console.error('❌ Failed to load tasks from Realtime Database:', error);
+    console.error('Error details:', {
+      code: error.code,
+      message: error.message,
+      stack: error.stack
+    });
+    throw new Error(`Failed to load tasks: ${error.message}`);
   }
 };
