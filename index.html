@@ -17,13 +17,12 @@
       // Import the functions you need from the SDKs you need
       import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
       import { getAuth } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
-      import { getDatabase } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+      import { getFirestore } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
       // Your web app's Firebase configuration
       const firebaseConfig = {
         apiKey: "AIzaSyBjaLi6_brDQqQ198cPgV30ITltdNLQBGg",
         authDomain: "task-garden-38324.firebaseapp.com",
-        databaseURL: "https://task-garden-38324-default-rtdb.firebaseio.com",
         projectId: "task-garden-38324",
         storageBucket: "task-garden-38324.firebasestorage.app",
         messagingSenderId: "744010796330",
@@ -33,7 +32,7 @@
       // Initialize Firebase and make it globally available
       const app = initializeApp(firebaseConfig);
       const auth = getAuth(app);
-      const db = getDatabase(app);
+      const db = getFirestore(app);
       
       // Configure Auth persistence to LOCAL (default, but explicit for clarity)
       // This ensures users stay signed in across browser sessions
@@ -47,7 +46,7 @@
       window.firebaseAuth = auth;
       window.firebaseDb = db;
       
-      console.log('✅ Firebase initialized successfully with Realtime Database');
+      console.log('✅ Firebase initialized successfully with Firestore');
     </script>
     
     <script type="module" src="/src/main.jsx"></script>
