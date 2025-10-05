@@ -47,6 +47,18 @@
       window.firebaseDb = db;
       
       console.log('✅ Firebase initialized successfully with Firestore');
+      console.log('✅ Firebase App:', app);
+      console.log('✅ Firebase Auth:', auth);
+      console.log('✅ Firebase DB:', db);
+      
+      // Verify Firebase is working
+      setTimeout(() => {
+        console.log('🔍 Firebase verification check:');
+        console.log('   window.firebaseApp:', !!window.firebaseApp);
+        console.log('   window.firebaseAuth:', !!window.firebaseAuth);
+        console.log('   window.firebaseDb:', !!window.firebaseDb);
+        console.log('   Current user:', auth.currentUser?.email || 'No user');
+      }, 1000);
     </script>
     
     <script type="module" src="/src/main.jsx"></script>

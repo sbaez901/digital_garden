@@ -1,8 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from "react";
-// import { useAuth } from "./AuthContext";
-import { signIn, signUp } from "./firebase";
-// import { logOut } from "./firebase";
-// import Auth from "./Auth.jsx";
+import { signIn, signUp, onAuthChange, saveTasks, loadTasks, getCurrentUser } from "./supabasePersistence";
 import LofiPlayer from "./components/LofiPlayer";
 import ReactPuzzle from "./components/ReactPuzzle";
 
@@ -46,21 +43,17 @@ export default function DigitalGardenApp() {
     }
   }, [isDarkMode]);
 
-  // Preload Firebase modules for faster performance
+  // Initialize Supabase persistence system
   useEffect(() => {
-    const preloadFirebase = async () => {
-      try {
-        // Preload firebase module in background
-        await import("./firebase");
-        console.log("Firebase module preloaded for faster task loading");
-      } catch (error) {
-        console.warn("Could not preload Firebase module");
-      }
-    };
+    console.log("🚀 Supabase persistence system initialized");
     
-    // Preload after a short delay to ensure app is ready
-    const timeoutId = setTimeout(preloadFirebase, 500);
-    return () => clearTimeout(timeoutId);
+    // Check if user is already signed in
+    const currentUser = getCurrentUser();
+    if (currentUser) {
+      console.log("✅ User already signed in:", currentUser.email);
+      setCurrentUser(currentUser);
+      loadUserTasks(currentUser.uid);
+    }
   }, []);
 
   // Authentication persistence effect - listen for auth state changes
@@ -69,10 +62,8 @@ export default function DigitalGardenApp() {
     
     const setupAuthListener = async () => {
       try {
-        const { onAuthChange } = await import("./firebase");
-        
         // Listen for authentication state changes
-        const unsubscribe = onAuthChange((user) => {
+        const unsubscribe = await onAuthChange((user) => {
           console.log("🔥 Auth state changed:", user ? `User: ${user.email} (${user.uid})` : "No user");
           setCurrentUser(user);
           
@@ -97,7 +88,7 @@ export default function DigitalGardenApp() {
     setupAuthListener();
   }, []);
 
-  // Save tasks to Firebase whenever they change
+  // Save tasks to localStorage whenever they change
   useEffect(() => {
     console.log("🔄 Task save effect triggered:", { 
       currentUser: !!currentUser, 
@@ -106,31 +97,27 @@ export default function DigitalGardenApp() {
       userEmail: currentUser?.email 
     });
     
-    if (currentUser && tasks.length >= 0) { // Changed from > 0 to >= 0 to save empty arrays too
-      const saveTasksToFirebase = async () => {
+    if (currentUser && tasks.length >= 0) { // Save empty arrays too
+      const saveTasksToStorage = async () => {
         try {
-          console.log("🚀 Starting Firebase save process...");
+          console.log("🚀 Starting localStorage save process...");
           console.log("📊 Tasks to save:", tasks);
           console.log("👤 User ID:", currentUser.uid);
           
-          const { saveTasks } = await import("./firebase");
-          console.log("📦 Firebase module imported successfully");
-          
           await saveTasks(currentUser.uid, tasks);
-          console.log("✅ Tasks saved to Firebase successfully:", tasks.length);
+          console.log("✅ Tasks saved to localStorage successfully:", tasks.length);
         } catch (error: any) {
-          console.error("❌ Could not save tasks to Firebase:", error);
+          console.error("❌ Could not save tasks to localStorage:", error);
           console.error("Error details:", {
             name: error.name,
             message: error.message,
-            code: error.code,
             stack: error.stack
           });
         }
       };
       
-      // Debounce the save to avoid too many Firebase calls
-      const timeoutId = setTimeout(saveTasksToFirebase, 1000);
+      // Debounce the save to avoid too many localStorage writes
+      const timeoutId = setTimeout(saveTasksToStorage, 500);
       return () => clearTimeout(timeoutId);
     } else {
       console.log("⏸️ Not saving tasks:", { 
@@ -141,11 +128,10 @@ export default function DigitalGardenApp() {
     }
   }, [tasks, currentUser]);
 
-  // Load user tasks from Firebase
+  // Load user tasks from Supabase
   const loadUserTasks = async (userId: string) => {
     try {
       setIsLoadingTasks(true);
-      const { loadTasks } = await import("./firebase");
       const savedTasks = await loadTasks(userId);
       
       // Add safety checks for loaded data
@@ -177,7 +163,6 @@ export default function DigitalGardenApp() {
   // Handle logout
   const handleLogout = async () => {
     try {
-      const { logOut } = await import("./firebase");
       await logOut();
       setCurrentUser(null);
       setTasks([]); // Clear tasks on logout
@@ -212,16 +197,14 @@ export default function DigitalGardenApp() {
         setAuthPassword("");
         
         // Load user's saved tasks in the background (non-blocking)
-        // Load user's saved tasks in the background (non-blocking)
         setIsLoadingTasks(true);
         
         // Start loading immediately (no delay)
         (async () => {
           try {
-            const { loadTasks } = await import("./firebase");
             const savedTasks = await loadTasks(userResult.user.uid);
             setTasks(savedTasks);
-            console.log("User tasks loaded from Firebase");
+            console.log("User tasks loaded from Supabase");
           } catch (error) {
             console.warn("Could not load tasks, starting fresh");
             setTasks([]);
